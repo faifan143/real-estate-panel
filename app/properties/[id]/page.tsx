@@ -12,6 +12,20 @@ import { useAuthStore } from '@/store/auth';
 import Link from 'next/link';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MapViewer to avoid SSR issues
+const DynamicMapViewer = dynamic(
+  () => import('@/components/ui/map-viewer').then((mod) => ({ default: mod.MapViewer })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 bg-zinc-100 rounded-lg flex items-center justify-center">
+        <p className="text-zinc-600">Loading map...</p>
+      </div>
+    ),
+  }
+);
 
 interface PropertyImage {
   imageId: string;
@@ -26,7 +40,16 @@ interface PropertyDetail {
   type: string;
   address?: string;
   description?: string;
+  price?: number;
+  location?: string;
+  latitude?: number;
+  longitude?: number;
+  area?: number;
+  rooms?: number;
+  floor?: number;
   status: string;
+  createdAt?: string;
+  updatedAt?: string;
   images: PropertyImage[];
 }
 
@@ -162,6 +185,54 @@ export default function PropertyDetailPage() {
                     <p className="text-zinc-600">{property.description}</p>
                   </div>
                 )}
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {property.price !== undefined && property.price !== null && (
+                    <div>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Price</h3>
+                      <p className="text-zinc-900 font-medium">${property.price.toLocaleString()}</p>
+                    </div>
+                  )}
+                  {property.area !== undefined && property.area !== null && (
+                    <div>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Area</h3>
+                      <p className="text-zinc-900 font-medium">{property.area} sq ft</p>
+                    </div>
+                  )}
+                  {property.rooms !== undefined && property.rooms !== null && (
+                    <div>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Rooms</h3>
+                      <p className="text-zinc-900 font-medium">{property.rooms}</p>
+                    </div>
+                  )}
+                  {property.floor !== undefined && property.floor !== null && (
+                    <div>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Floor</h3>
+                      <p className="text-zinc-900 font-medium">{property.floor}</p>
+                    </div>
+                  )}
+                  {property.location && (
+                    <div>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Location</h3>
+                      <p className="text-zinc-900 font-medium">{property.location}</p>
+                    </div>
+                  )}
+                </div>
+
+                {(property.latitude !== undefined && property.latitude !== null) &&
+                (property.longitude !== undefined && property.longitude !== null) ? (
+                  <div>
+                    <h3 className="font-semibold mb-2">Location on Map</h3>
+                    <DynamicMapViewer
+                      latitude={property.latitude}
+                      longitude={property.longitude}
+                      height="400px"
+                    />
+                    <p className="text-xs text-zinc-500 mt-2">
+                      Coordinates: {property.latitude.toFixed(6)}, {property.longitude.toFixed(6)}
+                    </p>
+                  </div>
+                ) : null}
 
                 <div>
                   <h3 className="font-semibold mb-2">Images</h3>

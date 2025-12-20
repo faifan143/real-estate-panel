@@ -15,27 +15,60 @@ import { api } from '@/lib/axios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useState } from 'react';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MapPicker to avoid SSR issues
+const DynamicMapPicker = dynamic(
+  () => import('@/components/ui/map-picker').then((mod) => ({ default: mod.MapPicker })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 bg-zinc-100 rounded-lg flex items-center justify-center">
+        <p className="text-zinc-600">Loading map...</p>
+      </div>
+    ),
+  }
+);
 
 const propertySchema = yup.object({
   title: yup.string().required('Title is required'),
   type: yup.string().required('Type is required'),
-  address: yup.string(),
-  description: yup.string(),
+  address: yup.string().optional(),
+  description: yup.string().optional(),
+  price: yup.number().min(0, 'Price must be positive').optional().nullable(),
+  location: yup.string().optional(),
+  latitude: yup.number().optional().nullable(),
+  longitude: yup.number().optional().nullable(),
+  area: yup.number().min(0, 'Area must be positive').integer('Area must be an integer').optional().nullable(),
+  rooms: yup.number().min(0, 'Rooms must be positive').integer('Rooms must be an integer').optional().nullable(),
+  floor: yup.number().integer('Floor must be an integer').optional().nullable(),
 });
 
 type PropertyFormData = yup.InferType<typeof propertySchema>;
 
 export default function CreatePropertyPage() {
   const router = useRouter();
+  const [mapKey, setMapKey] = useState(0);
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
 
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<PropertyFormData>({
-    resolver: yupResolver(propertySchema),
+    resolver: yupResolver(propertySchema) as any,
   });
+
+  const handleLocationChange = (lat: number, lng: number) => {
+    setLatitude(lat);
+    setLongitude(lng);
+    setValue('latitude', lat);
+    setValue('longitude', lng);
+  };
 
   const onSubmit = async (data: PropertyFormData) => {
     try {
@@ -96,6 +129,69 @@ export default function CreatePropertyPage() {
                 <div>
                   <Label htmlFor="description">Description</Label>
                   <Textarea id="description" {...register('description')} rows={4} />
+                </div>
+
+                <div>
+                  <Label htmlFor="price">Price</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    {...register('price', { valueAsNumber: true })}
+                  />
+                  {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
+                </div>
+
+                <div>
+                  <Label htmlFor="location">Location</Label>
+                  <Input id="location" {...register('location')} />
+                </div>
+
+                <div>
+                  <Label>Property Location on Map</Label>
+                  <DynamicMapPicker
+                    key={`map-picker-create-${mapKey}`}
+                    mapKey={`create-${mapKey}`}
+                    latitude={latitude}
+                    longitude={longitude}
+                    onLocationChange={handleLocationChange}
+                  />
+                  <p className="text-xs text-zinc-500 mt-2">
+                    Click on the map to set the property location
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="area">Area (sq ft)</Label>
+                    <Input
+                      id="area"
+                      type="number"
+                      min="0"
+                      {...register('area', { valueAsNumber: true })}
+                    />
+                    {errors.area && <p className="text-sm text-red-500 mt-1">{errors.area.message}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="rooms">Rooms</Label>
+                    <Input
+                      id="rooms"
+                      type="number"
+                      min="0"
+                      {...register('rooms', { valueAsNumber: true })}
+                    />
+                    {errors.rooms && <p className="text-sm text-red-500 mt-1">{errors.rooms.message}</p>}
+                  </div>
+                  <div>
+                    <Label htmlFor="floor">Floor</Label>
+                    <Input
+                      id="floor"
+                      type="number"
+                      {...register('floor', { valueAsNumber: true })}
+                    />
+                    {errors.floor && <p className="text-sm text-red-500 mt-1">{errors.floor.message}</p>}
+                  </div>
                 </div>
 
                 <div className="flex gap-3 pt-4">

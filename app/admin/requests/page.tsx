@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+// Dynamically import MapPicker to avoid SSR issues with Mapbox
+const DynamicMapPicker = dynamic(
+  () => import('@/components/ui/map-picker').then((mod) => ({ default: mod.MapPicker })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 bg-zinc-100 rounded-lg flex items-center justify-center">
+        <p className="text-zinc-600">Loading map...</p>
+      </div>
+    ),
+  }
+);
 
 interface AdminRequest {
   requestId: string;
@@ -155,17 +169,37 @@ function ApproveModal({
   onSuccess: () => void;
 }) {
   const [scheduledAt, setScheduledAt] = useState('');
-  const [latitude, setLatitude] = useState('');
-  const [longitude, setLongitude] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [mapKey, setMapKey] = useState(0);
+
+  // Reset form when modal opens/closes
+  useEffect(() => {
+    if (open) {
+      setScheduledAt('');
+      setLatitude(null);
+      setLongitude(null);
+      // Generate new key for map to force remount
+      setMapKey(prev => prev + 1);
+    }
+  }, [open]);
+
+  const handleLocationChange = (lat: number, lng: number) => {
+    setLatitude(lat);
+    setLongitude(lng);
+  };
 
   const approveMutation = useMutation({
     mutationFn: async () => {
       // Convert datetime-local format (YYYY-MM-DDTHH:mm) to ISO string
       const scheduledAtISO = scheduledAt ? new Date(scheduledAt).toISOString() : '';
+      if (latitude === null || longitude === null) {
+        throw new Error('Please select a location on the map');
+      }
       const response = await api.post(`/admin/requests/${request.requestId}/approve`, {
         scheduledAt: scheduledAtISO,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
+        latitude,
+        longitude,
       });
       return response.data;
     },
@@ -204,30 +238,19 @@ function ApproveModal({
               required
             />
           </div>
-          <div>
-            <Label htmlFor="latitude">Latitude *</Label>
-            <Input
-              id="latitude"
-              type="number"
-              step="any"
-              placeholder="e.g., 37.7749"
-              value={latitude}
-              onChange={(e) => setLatitude(e.target.value)}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="longitude">Longitude *</Label>
-            <Input
-              id="longitude"
-              type="number"
-              step="any"
-              placeholder="e.g., -122.4194"
-              value={longitude}
-              onChange={(e) => setLongitude(e.target.value)}
-              required
-            />
-          </div>
+          {open && (
+            <>
+              <Label>Meeting Location *</Label>
+              <DynamicMapPicker
+                key={`map-picker-${request.requestId}-${mapKey}`}
+                mapKey={`${request.requestId}-${mapKey}`}
+                latitude={latitude}
+                longitude={longitude}
+                onLocationChange={handleLocationChange}
+              />
+            </>
+          )}
+      
           <div className="flex gap-3 pt-4">
             <Button type="submit" disabled={approveMutation.isPending}>
               {approveMutation.isPending ? 'Approving...' : 'Approve Request'}
