@@ -13,6 +13,7 @@ import Link from 'next/link';
 import { toast } from 'sonner';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useTranslation } from 'react-i18next';
 
 // Dynamically import MapViewer to avoid SSR issues
 const DynamicMapViewer = dynamic(
@@ -54,6 +55,7 @@ interface PropertyDetail {
 }
 
 export default function PropertyDetailPage() {
+  const { t } = useTranslation();
   const params = useParams();
   const id = params.id as string;
   const { userId, role } = useAuthStore();
@@ -106,11 +108,11 @@ export default function PropertyDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property', id] });
-      toast.success('Image uploaded successfully');
+      toast.success(t('property.uploadImage'));
       setSelectedFile(null);
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Upload failed';
+      const message = error.response?.data?.message || t('common.error');
       toast.error(message);
     },
   });
@@ -121,10 +123,10 @@ export default function PropertyDetailPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['property', id] });
-      toast.success('Image deleted successfully');
+      toast.success(t('common.success'));
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Delete failed';
+      const message = error.response?.data?.message || t('common.error');
       toast.error(message);
     },
   });
@@ -142,9 +144,28 @@ export default function PropertyDetailPage() {
   };
 
   const handleDeleteImage = (imageId: string) => {
-    if (confirm('Are you sure you want to delete this image?')) {
+    if (confirm(t('common.confirm'))) {
       deleteImageMutation.mutate(imageId);
     }
+  };
+
+  const getTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      APARTMENT: t('property.types.apartment'),
+      HOUSE: t('property.types.house'),
+      COMMERCIAL: t('property.types.commercial'),
+      LAND: t('property.types.land'),
+    };
+    return typeMap[type] || type;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      ACTIVE: t('property.statuses.active'),
+      RESERVED: t('property.statuses.reserved'),
+      CLOSED: t('property.statuses.closed'),
+    };
+    return statusMap[status] || status;
   };
 
   return (
@@ -152,7 +173,7 @@ export default function PropertyDetailPage() {
       <Navbar />
       <div className="container mx-auto p-8">
         {isLoading ? (
-          <p className="text-zinc-600">Loading property...</p>
+          <p className="text-zinc-600">{t('property.loadingPropertyDetails')}</p>
         ) : property ? (
           <div className="max-w-4xl mx-auto">
             <Card>
@@ -161,12 +182,12 @@ export default function PropertyDetailPage() {
                   <div>
                     <CardTitle className="text-3xl">{property.title}</CardTitle>
                     <CardDescription className="text-lg mt-2">
-                      {property.type} - {property.status}
+                      {getTypeLabel(property.type)} - {getStatusLabel(property.status)}
                     </CardDescription>
                   </div>
                   {canEdit && (
                     <Link href={`/properties/${id}/edit`}>
-                      <Button variant="outline">Edit Property</Button>
+                      <Button variant="outline">{t('property.editProperty')}</Button>
                     </Link>
                   )}
                 </div>
@@ -174,14 +195,14 @@ export default function PropertyDetailPage() {
               <CardContent className="space-y-4">
                 {property.address && (
                   <div>
-                    <h3 className="font-semibold mb-1">Address</h3>
+                    <h3 className="font-semibold mb-1">{t('property.address')}</h3>
                     <p className="text-zinc-600">{property.address}</p>
                   </div>
                 )}
 
                 {property.description && (
                   <div>
-                    <h3 className="font-semibold mb-1">Description</h3>
+                    <h3 className="font-semibold mb-1">{t('property.description')}</h3>
                     <p className="text-zinc-600">{property.description}</p>
                   </div>
                 )}
@@ -189,31 +210,31 @@ export default function PropertyDetailPage() {
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {property.price !== undefined && property.price !== null && (
                     <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Price</h3>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.price')}</h3>
                       <p className="text-zinc-900 font-medium">${property.price.toLocaleString()}</p>
                     </div>
                   )}
                   {property.area !== undefined && property.area !== null && (
                     <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Area</h3>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.area')}</h3>
                       <p className="text-zinc-900 font-medium">{property.area} sq ft</p>
                     </div>
                   )}
                   {property.rooms !== undefined && property.rooms !== null && (
                     <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Rooms</h3>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.rooms')}</h3>
                       <p className="text-zinc-900 font-medium">{property.rooms}</p>
                     </div>
                   )}
                   {property.floor !== undefined && property.floor !== null && (
                     <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Floor</h3>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.floor')}</h3>
                       <p className="text-zinc-900 font-medium">{property.floor}</p>
                     </div>
                   )}
                   {property.location && (
                     <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">Location</h3>
+                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.location')}</h3>
                       <p className="text-zinc-900 font-medium">{property.location}</p>
                     </div>
                   )}
@@ -222,20 +243,20 @@ export default function PropertyDetailPage() {
                 {(property.latitude !== undefined && property.latitude !== null) &&
                 (property.longitude !== undefined && property.longitude !== null) ? (
                   <div>
-                    <h3 className="font-semibold mb-2">Location on Map</h3>
+                    <h3 className="font-semibold mb-2">{t('property.locationOnMap')}</h3>
                     <DynamicMapViewer
                       latitude={property.latitude}
                       longitude={property.longitude}
                       height="400px"
                     />
                     <p className="text-xs text-zinc-500 mt-2">
-                      Coordinates: {property.latitude.toFixed(6)}, {property.longitude.toFixed(6)}
+                      {t('property.coordinates')}: {property.latitude.toFixed(6)}, {property.longitude.toFixed(6)}
                     </p>
                   </div>
                 ) : null}
 
                 <div>
-                  <h3 className="font-semibold mb-2">Images</h3>
+                  <h3 className="font-semibold mb-2">{t('property.images')}</h3>
                   {property.images.length > 0 ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                       {property.images.map((image: PropertyImage) => (
@@ -252,7 +273,7 @@ export default function PropertyDetailPage() {
                                 variant="destructive"
                                 onClick={() => handleDeleteImage(image.imageId)}
                               >
-                                Delete
+                                {t('common.delete')}
                               </Button>
                             </div>
                           )}
@@ -260,12 +281,12 @@ export default function PropertyDetailPage() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-zinc-500 text-sm">No images uploaded yet.</p>
+                    <p className="text-zinc-500 text-sm">{t('property.noImages')}</p>
                   )}
 
                   {canEdit && (
                     <div className="mt-4 p-4 bg-zinc-50 rounded-lg">
-                      <h4 className="font-semibold mb-2 text-sm">Upload Image</h4>
+                      <h4 className="font-semibold mb-2 text-sm">{t('property.uploadImage')}</h4>
                       <div className="flex gap-2">
                         <Input
                           type="file"
@@ -277,7 +298,7 @@ export default function PropertyDetailPage() {
                           onClick={handleUpload}
                           disabled={!selectedFile || uploadImageMutation.isPending}
                         >
-                          {uploadImageMutation.isPending ? 'Uploading...' : 'Upload'}
+                          {uploadImageMutation.isPending ? t('property.uploading') : t('property.upload')}
                         </Button>
                       </div>
                     </div>
@@ -286,7 +307,7 @@ export default function PropertyDetailPage() {
 
                 {canCreateRequest && (
                   <div className="pt-4 border-t">
-                    <h3 className="font-semibold mb-3">Request Property</h3>
+                    <h3 className="font-semibold mb-3">{t('request.request')} {t('property.title')}</h3>
                     <div className="flex gap-3">
                       <CreateRequestButton propertyId={id} type="BUY" />
                       <CreateRequestButton propertyId={id} type="RENT" variant="outline" />
@@ -298,12 +319,12 @@ export default function PropertyDetailPage() {
 
             <div className="mt-6">
               <Link href="/properties">
-                <Button variant="ghost">← Back to Properties</Button>
+                <Button variant="ghost">← {t('common.back')} {t('nav.properties')}</Button>
               </Link>
             </div>
           </div>
         ) : (
-          <p className="text-zinc-600">Property not found.</p>
+          <p className="text-zinc-600">{t('property.propertyNotFound')}</p>
         )}
       </div>
     </ProtectedRoute>
@@ -319,6 +340,7 @@ function CreateRequestButton({
   type: 'BUY' | 'RENT';
   variant?: 'default' | 'outline';
 }) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
 
   const createRequestMutation = useMutation({
@@ -329,10 +351,10 @@ function CreateRequestButton({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-requests'] });
       queryClient.invalidateQueries({ queryKey: ['property', propertyId] });
-      toast.success(`Request to ${type.toLowerCase()} created successfully`);
+      toast.success(t('request.request') + ' ' + t('common.success'));
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Request creation failed';
+      const message = error.response?.data?.message || t('common.error');
       toast.error(message);
     },
   });
@@ -343,7 +365,7 @@ function CreateRequestButton({
       onClick={() => createRequestMutation.mutate()}
       disabled={createRequestMutation.isPending}
     >
-      {createRequestMutation.isPending ? 'Creating...' : `Request to ${type === 'BUY' ? 'Buy' : 'Rent'}`}
+      {createRequestMutation.isPending ? t('common.loading') : `${t('request.request')} ${type === 'BUY' ? t('request.types.buy') : t('request.types.rent')}`}
     </Button>
   );
 }

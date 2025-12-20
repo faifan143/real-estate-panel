@@ -7,6 +7,7 @@ import { api } from '@/lib/axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface Meeting {
   meetingId: string;
@@ -23,6 +24,7 @@ interface Property {
 }
 
 export default function MyMeetingsPage() {
+  const { t, i18n } = useTranslation();
   const { data: meetings, isLoading } = useQuery({
     queryKey: ['my-meetings'],
     queryFn: async () => {
@@ -42,11 +44,11 @@ export default function MyMeetingsPage() {
   });
 
   const getPropertyTitle = (propertyId: string) => {
-    return properties?.find(p => p.propertyId === propertyId)?.title || 'Property';
+    return properties?.find(p => p.propertyId === propertyId)?.title || t('property.title');
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
+    return new Date(dateString).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -59,14 +61,18 @@ export default function MyMeetingsPage() {
     return role === 'BUYER' ? 'text-blue-600 bg-blue-50' : 'text-purple-600 bg-purple-50';
   };
 
+  const getRoleLabel = (role: string) => {
+    return role === 'BUYER' ? t('meeting.buyer') : t('meeting.seller');
+  };
+
   return (
     <ProtectedRoute requireRole="USER">
       <Navbar />
       <div className="container mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">My Meetings</h1>
+        <h1 className="text-3xl font-bold mb-6">{t('meeting.myMeetings')}</h1>
 
         {isLoading ? (
-          <p className="text-zinc-600">Loading your meetings...</p>
+          <p className="text-zinc-600">{t('meeting.loadingMeetings')}</p>
         ) : meetings && meetings.length > 0 ? (
           <div className="space-y-4">
             {meetings.map((meeting) => (
@@ -78,21 +84,21 @@ export default function MyMeetingsPage() {
                         {getPropertyTitle(meeting.propertyId)}
                       </CardTitle>
                       <CardDescription>
-                        Scheduled for {formatDate(meeting.scheduledAt)} • You are the {meeting.roleInMeeting}
+                        {t('meeting.scheduledFor')} {formatDate(meeting.scheduledAt)} • {t('meeting.youAre')} {getRoleLabel(meeting.roleInMeeting)}
                       </CardDescription>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleBadgeColor(meeting.roleInMeeting)}`}>
-                      {meeting.roleInMeeting}
+                      {getRoleLabel(meeting.roleInMeeting)}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div className="flex gap-3">
                     <Link href={`/properties/${meeting.propertyId}`}>
-                      <Button variant="outline">View Property</Button>
+                      <Button variant="outline">{t('property.viewProperty')}</Button>
                     </Link>
                     <Link href={`/meetings/${meeting.meetingId}`}>
-                      <Button variant="outline">View Meeting Details</Button>
+                      <Button variant="outline">{t('meeting.meetingDetails')}</Button>
                     </Link>
                   </div>
                 </CardContent>
@@ -101,9 +107,9 @@ export default function MyMeetingsPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-zinc-600 mb-4">You don't have any scheduled meetings yet.</p>
+            <p className="text-zinc-600 mb-4">{t('meeting.noMeetings')}</p>
             <Link href="/properties">
-              <Button>Browse Properties</Button>
+              <Button>{t('request.browseProperties')}</Button>
             </Link>
           </div>
         )}

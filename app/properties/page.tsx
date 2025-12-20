@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useTranslation } from 'react-i18next';
 
 interface Property {
   propertyId: string;
@@ -17,6 +18,7 @@ interface Property {
 }
 
 export default function PropertiesPage() {
+  const { t } = useTranslation();
   const { data: properties, isLoading } = useQuery({
     queryKey: ['properties'],
     queryFn: async () => {
@@ -25,11 +27,30 @@ export default function PropertiesPage() {
     },
   });
 
+  const getTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      APARTMENT: t('property.types.apartment'),
+      HOUSE: t('property.types.house'),
+      COMMERCIAL: t('property.types.commercial'),
+      LAND: t('property.types.land'),
+    };
+    return typeMap[type] || type;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      ACTIVE: t('property.statuses.active'),
+      RESERVED: t('property.statuses.reserved'),
+      CLOSED: t('property.statuses.closed'),
+    };
+    return statusMap[status] || status;
+  };
+
   return (
     <ProtectedRoute>
       <Navbar />
       <div className="container mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">Properties</h1>
+        <h1 className="text-3xl font-bold mb-6">{t('nav.properties')}</h1>
 
         {isLoading ? (
           <LoadingSpinner className="py-12" />
@@ -40,13 +61,13 @@ export default function PropertiesPage() {
                 <CardHeader>
                   <CardTitle>{property.title}</CardTitle>
                   <CardDescription>
-                    {property.type} - {property.status}
+                    {getTypeLabel(property.type)} - {getStatusLabel(property.status)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <Link href={`/properties/${property.propertyId}`}>
                     <Button variant="outline" className="w-full">
-                      View Details
+                      {t('property.viewDetails')}
                     </Button>
                   </Link>
                 </CardContent>
@@ -54,7 +75,7 @@ export default function PropertiesPage() {
             ))}
           </div>
         ) : (
-          <p className="text-zinc-600">No properties found.</p>
+          <p className="text-zinc-600">{t('property.noProperties')}</p>
         )}
       </div>
     </ProtectedRoute>

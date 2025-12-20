@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { useTranslation } from 'react-i18next';
 
 // Dynamically import MapPicker to avoid SSR issues
 const DynamicMapPicker = dynamic(
@@ -49,6 +50,7 @@ type PropertyFormData = yup.InferType<typeof propertySchema>;
 
 export default function CreatePropertyPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [mapKey, setMapKey] = useState(0);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
@@ -73,10 +75,10 @@ export default function CreatePropertyPage() {
   const onSubmit = async (data: PropertyFormData) => {
     try {
       const response = await api.post('/properties', data);
-      toast.success('Property created successfully!');
+      toast.success(t('property.propertyCreated'));
       router.push(`/properties/${response.data.propertyId}`);
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Creation failed';
+      const message = error.response?.data?.message || t('property.creationFailed');
       toast.error(message);
     }
   };
@@ -88,32 +90,32 @@ export default function CreatePropertyPage() {
         <div className="max-w-2xl mx-auto">
           <Card>
             <CardHeader>
-              <CardTitle>Create Property</CardTitle>
-              <CardDescription>Add a new property to your portfolio</CardDescription>
+              <CardTitle>{t('property.createProperty')}</CardTitle>
+              <CardDescription>{t('property.addNewProperty')}</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                 <div>
-                  <Label htmlFor="title">Title *</Label>
+                  <Label htmlFor="title">{t('property.title')} *</Label>
                   <Input id="title" {...register('title')} />
                   {errors.title && <p className="text-sm text-red-500 mt-1">{errors.title.message}</p>}
                 </div>
 
                 <div>
-                  <Label htmlFor="type">Type *</Label>
+                  <Label htmlFor="type">{t('property.type')} *</Label>
                   <Controller
                     name="type"
                     control={control}
                     render={({ field }) => (
                       <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
+                          <SelectValue placeholder={t('property.selectType')} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="APARTMENT">Apartment</SelectItem>
-                          <SelectItem value="HOUSE">House</SelectItem>
-                          <SelectItem value="COMMERCIAL">Commercial</SelectItem>
-                          <SelectItem value="LAND">Land</SelectItem>
+                          <SelectItem value="APARTMENT">{t('property.types.apartment')}</SelectItem>
+                          <SelectItem value="HOUSE">{t('property.types.house')}</SelectItem>
+                          <SelectItem value="COMMERCIAL">{t('property.types.commercial')}</SelectItem>
+                          <SelectItem value="LAND">{t('property.types.land')}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -122,17 +124,17 @@ export default function CreatePropertyPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="address">Address</Label>
+                  <Label htmlFor="address">{t('property.address')}</Label>
                   <Input id="address" {...register('address')} />
                 </div>
 
                 <div>
-                  <Label htmlFor="description">Description</Label>
+                  <Label htmlFor="description">{t('property.description')}</Label>
                   <Textarea id="description" {...register('description')} rows={4} />
                 </div>
 
                 <div>
-                  <Label htmlFor="price">Price</Label>
+                  <Label htmlFor="price">{t('property.price')}</Label>
                   <Input
                     id="price"
                     type="number"
@@ -144,12 +146,12 @@ export default function CreatePropertyPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="location">Location</Label>
+                  <Label htmlFor="location">{t('property.location')}</Label>
                   <Input id="location" {...register('location')} />
                 </div>
 
                 <div>
-                  <Label>Property Location on Map</Label>
+                  <Label>{t('property.propertyLocationOnMap')}</Label>
                   <DynamicMapPicker
                     key={`map-picker-create-${mapKey}`}
                     mapKey={`create-${mapKey}`}
@@ -158,13 +160,13 @@ export default function CreatePropertyPage() {
                     onLocationChange={handleLocationChange}
                   />
                   <p className="text-xs text-zinc-500 mt-2">
-                    Click on the map to set the property location
+                    {t('property.clickMapToSetLocation')}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label htmlFor="area">Area (sq ft)</Label>
+                    <Label htmlFor="area">{t('property.areaSqFt')}</Label>
                     <Input
                       id="area"
                       type="number"
@@ -174,7 +176,7 @@ export default function CreatePropertyPage() {
                     {errors.area && <p className="text-sm text-red-500 mt-1">{errors.area.message}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="rooms">Rooms</Label>
+                    <Label htmlFor="rooms">{t('property.rooms')}</Label>
                     <Input
                       id="rooms"
                       type="number"
@@ -184,7 +186,7 @@ export default function CreatePropertyPage() {
                     {errors.rooms && <p className="text-sm text-red-500 mt-1">{errors.rooms.message}</p>}
                   </div>
                   <div>
-                    <Label htmlFor="floor">Floor</Label>
+                    <Label htmlFor="floor">{t('property.floor')}</Label>
                     <Input
                       id="floor"
                       type="number"
@@ -196,11 +198,11 @@ export default function CreatePropertyPage() {
 
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" disabled={isSubmitting}>
-                    {isSubmitting ? 'Creating...' : 'Create Property'}
+                    {isSubmitting ? t('property.creating') : t('property.createProperty')}
                   </Button>
                   <Link href="/my-properties">
                     <Button variant="outline" type="button">
-                      Cancel
+                      {t('common.cancel')}
                     </Button>
                   </Link>
                 </div>

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+import { useTranslation } from "react-i18next";
 
 // You can set your Mapbox access token here or via environment variable
 // Get a free token at https://account.mapbox.com/
@@ -27,6 +28,7 @@ export function MapPicker({
   onLocationChange,
   mapKey,
 }: MapPickerProps) {
+  const { t } = useTranslation();
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markerRef = useRef<mapboxgl.Marker | null>(null);
@@ -40,7 +42,7 @@ export function MapPicker({
   // Get user's current location
   useEffect(() => {
     if (!navigator.geolocation) {
-      setError("Geolocation is not supported by your browser.");
+      setError(t('map.geolocationNotSupported'));
       setCurrentLocation([37.7749, -122.4194]);
       setLoading(false);
       return;
@@ -59,16 +61,14 @@ export function MapPicker({
       },
       (err) => {
         console.error("Error getting location:", err);
-        setError(
-          "Unable to get your location. Please allow location access or click on the map to set a location."
-        );
+        setError(t('map.unableToGetLocation'));
         setCurrentLocation([37.7749, -122.4194]);
         setLoading(false);
       }
     );
     // intentionally do not depend on latitude/longitude to avoid re-requesting geo
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [t]);
 
   // Initialize or reinitialize map when mapKey changes or container is ready
   useEffect(() => {
@@ -350,11 +350,9 @@ export function MapPicker({
     map.on("error", (e: any) => {
       console.error("Mapbox error:", e);
       if (e.error?.message?.includes("token") || e.error?.message?.includes("Unauthorized")) {
-        setError(
-          "Invalid Mapbox token. Please check your NEXT_PUBLIC_MAPBOX_TOKEN environment variable or get a new token from https://account.mapbox.com/"
-        );
+        setError(t('map.invalidMapboxToken'));
       } else {
-        setError(`Failed to load map: ${e.error?.message || "Unknown error"}`);
+        setError(`${t('map.failedToLoadMap')}: ${e.error?.message || t('common.error')}`);
       }
     });
 
@@ -379,7 +377,7 @@ export function MapPicker({
     };
     // Reinitialize when mapKey changes or when loading completes
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapKey, loading]);
+  }, [mapKey, loading, t]);
 
   // Update map center and marker when latitude/longitude changes (after initial mount)
   useEffect(() => {
@@ -570,7 +568,7 @@ export function MapPicker({
   if (loading) {
     return (
       <div className="h-64 bg-zinc-100 rounded-lg flex items-center justify-center">
-        <p className="text-zinc-600">Loading map...</p>
+        <p className="text-zinc-600">{t('map.loadingMap')}</p>
       </div>
     );
   }
@@ -592,7 +590,7 @@ export function MapPicker({
       </div>
 
       <p className="text-xs text-zinc-500">
-        Click on the map to set the meeting location
+        {t('map.clickToSetLocation')}
       </p>
     </div>
   );

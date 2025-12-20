@@ -11,6 +11,8 @@ import { api } from '@/lib/axios';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/ui/language-switcher';
 
 const registerSchema = yup.object({
   name: yup.string().required('Name is required'),
@@ -22,6 +24,7 @@ type RegisterFormData = yup.InferType<typeof registerSchema>;
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const {
     register,
@@ -34,50 +37,53 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormData) => {
     try {
       await api.post('/auth/register', data);
-      toast.success('Registration successful! Please login.');
+      toast.success(t('auth.registerSuccess'));
       router.push('/login');
     } catch (error: any) {
-      const message = error.response?.data?.message || 'Registration failed';
+      const message = error.response?.data?.message || t('common.error');
       toast.error(message);
     }
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 p-4">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
-          <CardTitle>Register</CardTitle>
-          <CardDescription>Create a new account</CardDescription>
+          <CardTitle>{t('auth.register')}</CardTitle>
+          <CardDescription>{t('auth.registerDescription')}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name">{t('auth.username')}</Label>
               <Input id="name" type="text" {...register('name')} />
               {errors.name && <p className="text-sm text-red-500 mt-1">{errors.name.message}</p>}
             </div>
 
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('auth.email')}</Label>
               <Input id="email" type="email" {...register('email')} />
               {errors.email && <p className="text-sm text-red-500 mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('auth.password')}</Label>
               <Input id="password" type="password" {...register('password')} />
               {errors.password && <p className="text-sm text-red-500 mt-1">{errors.password.message}</p>}
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Registering...' : 'Register'}
+              {isSubmitting ? t('common.loading') : t('auth.register')}
             </Button>
           </form>
 
           <div className="mt-4 text-center text-sm">
-            Already have an account?{' '}
+            {t('auth.hasAccount')}{' '}
             <Link href="/login" className="text-blue-600 hover:underline">
-              Login
+              {t('auth.login')}
             </Link>
           </div>
         </CardContent>

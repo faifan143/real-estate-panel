@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useAuthStore } from '@/store/auth';
+import { useTranslation } from 'react-i18next';
 
 // Dynamically import MapViewer to avoid SSR issues
 const DynamicMapViewer = dynamic(
@@ -41,6 +42,7 @@ interface PropertyDetail {
 }
 
 export default function MeetingDetailPage() {
+  const { t, i18n } = useTranslation();
   const params = useParams();
   const id = params.id as string;
   const { userId } = useAuthStore();
@@ -64,7 +66,7 @@ export default function MeetingDetailPage() {
   });
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
+    return new Date(dateString).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -78,54 +80,54 @@ export default function MeetingDetailPage() {
       <Navbar />
       <div className="container mx-auto p-8">
         {isLoading ? (
-          <p className="text-zinc-600">Loading meeting details...</p>
+          <p className="text-zinc-600">{t('meeting.loadingMeetingDetails')}</p>
         ) : meeting ? (
           <div className="max-w-2xl mx-auto">
             <Card>
               <CardHeader>
-                <CardTitle className="text-2xl">Meeting Details</CardTitle>
+                <CardTitle className="text-2xl">{t('meeting.meetingDetails')}</CardTitle>
                 {property && (
                   <CardDescription>{property.title}</CardDescription>
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h3 className="font-semibold mb-1">Status</h3>
+                  <h3 className="font-semibold mb-1">{t('property.status')}</h3>
                   <div className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-50 text-green-600">
-                    {meeting.status}
+                    {t(`meeting.statuses.${meeting.status.toLowerCase()}`)}
                   </div>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-1">Scheduled At</h3>
+                  <h3 className="font-semibold mb-1">{t('meeting.scheduledAt')}</h3>
                   <p className="text-zinc-600">{formatDate(meeting.scheduledAt)}</p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-2">Meeting Location</h3>
+                  <h3 className="font-semibold mb-2">{t('meeting.meetingLocation')}</h3>
                   <DynamicMapViewer
                     latitude={meeting.latitude}
                     longitude={meeting.longitude}
                     height="400px"
                   />
                   <p className="text-xs text-zinc-500 mt-2">
-                    Coordinates: {meeting.latitude.toFixed(6)}, {meeting.longitude.toFixed(6)}
+                    {t('property.coordinates')}: {meeting.latitude.toFixed(6)}, {meeting.longitude.toFixed(6)}
                   </p>
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-1">Participants</h3>
+                  <h3 className="font-semibold mb-1">{t('meeting.participants')}</h3>
                   <p className="text-zinc-600 text-sm">
-                    {meeting.buyerId === userId ? 'You (Buyer)' : 'Buyer'}
+                    {meeting.buyerId === userId ? t('meeting.youBuyer') : t('meeting.buyer')}
                   </p>
                   <p className="text-zinc-600 text-sm">
-                    {meeting.sellerId === userId ? 'You (Seller)' : 'Seller'}
+                    {meeting.sellerId === userId ? t('meeting.youSeller') : t('meeting.seller')}
                   </p>
                 </div>
 
                 <div className="pt-4 border-t">
                   <Link href={`/properties/${meeting.propertyId}`}>
-                    <Button>View Property</Button>
+                    <Button>{t('property.viewProperty')}</Button>
                   </Link>
                 </div>
               </CardContent>
@@ -133,12 +135,12 @@ export default function MeetingDetailPage() {
 
             <div className="mt-6">
               <Link href="/my-meetings">
-                <Button variant="ghost">← Back to My Meetings</Button>
+                <Button variant="ghost">← {t('meeting.backToMeetings')}</Button>
               </Link>
             </div>
           </div>
         ) : (
-          <p className="text-zinc-600">Meeting not found.</p>
+          <p className="text-zinc-600">{t('meeting.meetingNotFound')}</p>
         )}
       </div>
     </ProtectedRoute>

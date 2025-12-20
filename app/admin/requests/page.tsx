@@ -20,6 +20,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useTranslation } from 'react-i18next';
 
 // Dynamically import MapPicker to avoid SSR issues with Mapbox
 const DynamicMapPicker = dynamic(
@@ -48,6 +49,7 @@ interface Property {
 }
 
 export default function AdminRequestsPage() {
+  const { t, i18n } = useTranslation();
   const queryClient = useQueryClient();
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
@@ -72,15 +74,23 @@ export default function AdminRequestsPage() {
   });
 
   const getPropertyTitle = (propertyId: string) => {
-    return properties?.find(p => p.propertyId === propertyId)?.title || 'Property';
+    return properties?.find(p => p.propertyId === propertyId)?.title || t('property.title');
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
     });
+  };
+
+  const getTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      BUY: t('request.types.buy'),
+      RENT: t('request.types.rent'),
+    };
+    return typeMap[type] || type;
   };
 
   const openApproveModal = (request: AdminRequest) => {
@@ -97,10 +107,10 @@ export default function AdminRequestsPage() {
     <ProtectedRoute requireRole="ADMIN">
       <Navbar />
       <div className="container mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">Admin - Pending Requests</h1>
+        <h1 className="text-3xl font-bold mb-6">{t('admin.adminRequests')}</h1>
 
         {isLoading ? (
-          <p className="text-zinc-600">Loading pending requests...</p>
+          <p className="text-zinc-600">{t('admin.loadingPendingRequests')}</p>
         ) : requests && requests.length > 0 ? (
           <div className="space-y-4">
             {requests.map((request: AdminRequest) => (
@@ -112,27 +122,27 @@ export default function AdminRequestsPage() {
                         {getPropertyTitle(request.propertyId)}
                       </CardTitle>
                       <CardDescription>
-                        {request.type} Request • Created on {formatDate(request.createdAt)}
+                        {getTypeLabel(request.type)} {t('request.request')} • {t('request.createdOn')} {formatDate(request.createdAt)}
                       </CardDescription>
                     </div>
                     <div className="px-3 py-1 rounded-full text-sm font-medium bg-yellow-50 text-yellow-600">
-                      PENDING
+                      {t('request.statuses.pending')}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="flex gap-3">
                     <Link href={`/properties/${request.propertyId}`}>
-                      <Button variant="outline">View Property</Button>
+                      <Button variant="outline">{t('property.viewProperty')}</Button>
                     </Link>
                     <Button onClick={() => openApproveModal(request)}>
-                      Approve
+                      {t('admin.approveRequest')}
                     </Button>
                     <Button
                       variant="destructive"
                       onClick={() => openRejectModal(request)}
                     >
-                      Reject
+                      {t('admin.rejectRequest')}
                     </Button>
                   </div>
                 </CardContent>
@@ -141,7 +151,7 @@ export default function AdminRequestsPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-zinc-600">No pending requests at the moment.</p>
+            <p className="text-zinc-600">{t('admin.noPendingRequests')}</p>
           </div>
         )}
       </div>
@@ -183,6 +193,7 @@ function ApproveModal({
   request: AdminRequest;
   onSuccess: () => void;
 }) {
+  const { t } = useTranslation();
   const [scheduledAt, setScheduledAt] = useState('');
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
@@ -209,7 +220,7 @@ function ApproveModal({
       // Convert datetime-local format (YYYY-MM-DDTHH:mm) to ISO string
       const scheduledAtISO = scheduledAt ? new Date(scheduledAt).toISOString() : '';
       if (latitude === null || longitude === null) {
-        throw new Error('Please select a location on the map');
+        throw new Error(t('admin.pleaseSelectLocation'));
       }
       const response = await api.post(`/admin/requests/${request.requestId}/approve`, {
         scheduledAt: scheduledAtISO,
@@ -219,11 +230,11 @@ function ApproveModal({
       return response.data;
     },
     onSuccess: () => {
-      toast.success('Request approved successfully');
+      toast.success(t('admin.requestApproved'));
       onSuccess();
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Approval failed';
+      const message = error.response?.data?.message || t('admin.approvalFailed');
       toast.error(message);
     },
   });
@@ -237,14 +248,14 @@ function ApproveModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Approve Request</DialogTitle>
+          <DialogTitle>{t('admin.approveRequest')}</DialogTitle>
           <DialogDescription>
-            Set meeting details for this {request.type} request
+            {t('admin.setMeetingDetails', { type: t(`request.types.${request.type.toLowerCase()}`) })}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="scheduledAt">Scheduled Date & Time *</Label>
+            <Label htmlFor="scheduledAt">{t('admin.scheduledDateTime')} *</Label>
             <Input
               id="scheduledAt"
               type="datetime-local"
@@ -255,7 +266,7 @@ function ApproveModal({
           </div>
           {open && (
             <>
-              <Label>Meeting Location *</Label>
+              <Label>{t('admin.meetingLocationRequired')}</Label>
               <DynamicMapPicker
                 key={`map-picker-${request.requestId}-${mapKey}`}
                 mapKey={`${request.requestId}-${mapKey}`}
@@ -268,14 +279,14 @@ function ApproveModal({
       
           <div className="flex gap-3 pt-4">
             <Button type="submit" disabled={approveMutation.isPending}>
-              {approveMutation.isPending ? 'Approving...' : 'Approve Request'}
+              {approveMutation.isPending ? t('admin.approving') : t('admin.approveRequestButton')}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         </form>
@@ -295,6 +306,7 @@ function RejectModal({
   request: AdminRequest;
   onSuccess: () => void;
 }) {
+  const { t } = useTranslation();
   const [reason, setReason] = useState('');
 
   const rejectMutation = useMutation({
@@ -305,11 +317,11 @@ function RejectModal({
       return response.data;
     },
     onSuccess: () => {
-      toast.success('Request rejected');
+      toast.success(t('admin.requestRejected'));
       onSuccess();
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Rejection failed';
+      const message = error.response?.data?.message || t('admin.rejectionFailed');
       toast.error(message);
     },
   });
@@ -323,17 +335,17 @@ function RejectModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Reject Request</DialogTitle>
+          <DialogTitle>{t('admin.rejectRequest')}</DialogTitle>
           <DialogDescription>
-            Optionally provide a reason for rejecting this request
+            {t('admin.rejectDescription')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <Label htmlFor="reason">Reason (optional)</Label>
+            <Label htmlFor="reason">{t('admin.rejectionReason')}</Label>
             <Textarea
               id="reason"
-              placeholder="Enter rejection reason..."
+              placeholder={t('admin.enterRejectionReason')}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               rows={4}
@@ -345,14 +357,14 @@ function RejectModal({
               variant="destructive"
               disabled={rejectMutation.isPending}
             >
-              {rejectMutation.isPending ? 'Rejecting...' : 'Reject Request'}
+              {rejectMutation.isPending ? t('admin.rejecting') : t('admin.rejectRequestButton')}
             </Button>
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
             >
-              Cancel
+              {t('common.cancel')}
             </Button>
           </div>
         </form>

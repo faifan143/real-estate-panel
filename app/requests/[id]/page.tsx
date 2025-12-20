@@ -9,6 +9,7 @@ import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
+import { useTranslation } from 'react-i18next';
 
 interface RequestDetail {
   requestId: string;
@@ -35,6 +36,7 @@ interface PropertyDetail {
 }
 
 export default function RequestDetailPage() {
+  const { t, i18n } = useTranslation();
   const params = useParams();
   const id = params.id as string;
   const { userId } = useAuthStore();
@@ -72,7 +74,7 @@ export default function RequestDetailPage() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleString('en-US', {
+    return new Date(dateString).toLocaleString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -94,12 +96,29 @@ export default function RequestDetailPage() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      PENDING: t('request.statuses.pending'),
+      APPROVED: t('request.statuses.approved'),
+      REJECTED: t('request.statuses.rejected'),
+    };
+    return statusMap[status] || status;
+  };
+
+  const getTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      BUY: t('request.types.buy'),
+      RENT: t('request.types.rent'),
+    };
+    return typeMap[type] || type;
+  };
+
   return (
     <ProtectedRoute>
       <Navbar />
       <div className="container mx-auto p-8">
         {isLoading ? (
-          <p className="text-zinc-600">Loading request details...</p>
+          <p className="text-zinc-600">{t('request.loadingRequestDetails')}</p>
         ) : request ? (
           <div className="max-w-2xl mx-auto">
             <Card>
@@ -107,36 +126,36 @@ export default function RequestDetailPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <CardTitle className="text-2xl">
-                      {property ? property.title : `${request.type} Request`}
+                      {property ? property.title : `${getTypeLabel(request.type)} ${t('request.request')}`}
                     </CardTitle>
-                    <CardDescription>{request.type} Request</CardDescription>
+                    <CardDescription>{getTypeLabel(request.type)} {t('request.request')}</CardDescription>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(request.status)}`}>
-                    {request.status}
+                    {getStatusLabel(request.status)}
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
 
                 <div>
-                  <h3 className="font-semibold mb-1">Created At</h3>
+                  <h3 className="font-semibold mb-1">{t('request.createdAt')}</h3>
                   <p className="text-zinc-600">{formatDate(request.createdAt)}</p>
                 </div>
 
                 {request.decisionAt && (
                   <div>
-                    <h3 className="font-semibold mb-1">Decision At</h3>
+                    <h3 className="font-semibold mb-1">{t('request.decisionAt')}</h3>
                     <p className="text-zinc-600">{formatDate(request.decisionAt)}</p>
                   </div>
                 )}
 
                 <div className="pt-4 border-t flex gap-3">
                   <Link href={`/properties/${request.propertyId}`}>
-                    <Button>View Property</Button>
+                    <Button>{t('property.viewProperty')}</Button>
                   </Link>
                   {request.status === 'APPROVED' && meeting && (
                     <Link href={`/meetings/${meeting.meetingId}`}>
-                      <Button variant="outline">View Meeting</Button>
+                      <Button variant="outline">{t('request.viewMeeting')}</Button>
                     </Link>
                   )}
                 </div>
@@ -145,12 +164,12 @@ export default function RequestDetailPage() {
 
             <div className="mt-6">
               <Link href="/my-requests">
-                <Button variant="ghost">← Back to My Requests</Button>
+                <Button variant="ghost">← {t('request.backToRequests')}</Button>
               </Link>
             </div>
           </div>
         ) : (
-          <p className="text-zinc-600">Request not found.</p>
+          <p className="text-zinc-600">{t('request.requestNotFound')}</p>
         )}
       </div>
     </ProtectedRoute>

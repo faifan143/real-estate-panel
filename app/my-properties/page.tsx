@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/store/auth';
 import { toast } from 'sonner';
+import { useTranslation } from 'react-i18next';
 
 interface Property {
   propertyId: string;
@@ -19,6 +20,7 @@ interface Property {
 }
 
 export default function MyPropertiesPage() {
+  const { t } = useTranslation();
   const { userId } = useAuthStore();
   const queryClient = useQueryClient();
 
@@ -36,22 +38,41 @@ export default function MyPropertiesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['properties'] });
-      toast.success('Property deleted successfully');
+      toast.success(t('property.propertyDeleted'));
     },
     onError: (error: any) => {
-      const message = error.response?.data?.message || 'Delete failed';
+      const message = error.response?.data?.message || t('property.deleteFailed');
       toast.error(message);
     },
   });
 
   const handleDelete = (propertyId: string, status: string) => {
     if (status !== 'ACTIVE') {
-      toast.error('Only ACTIVE properties can be deleted');
+      toast.error(t('property.onlyActiveCanDelete'));
       return;
     }
-    if (confirm('Are you sure you want to delete this property?')) {
+    if (confirm(t('property.deleteConfirm'))) {
       deleteMutation.mutate(propertyId);
     }
+  };
+
+  const getTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      APARTMENT: t('property.types.apartment'),
+      HOUSE: t('property.types.house'),
+      COMMERCIAL: t('property.types.commercial'),
+      LAND: t('property.types.land'),
+    };
+    return typeMap[type] || type;
+  };
+
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      ACTIVE: t('property.statuses.active'),
+      RESERVED: t('property.statuses.reserved'),
+      CLOSED: t('property.statuses.closed'),
+    };
+    return statusMap[status] || status;
   };
 
   return (
@@ -59,14 +80,14 @@ export default function MyPropertiesPage() {
       <Navbar />
       <div className="container mx-auto p-8">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">My Properties</h1>
+          <h1 className="text-3xl font-bold">{t('nav.myProperties')}</h1>
           <Link href="/my-properties/create">
-            <Button>Create Property</Button>
+            <Button>{t('property.createProperty')}</Button>
           </Link>
         </div>
 
         {isLoading ? (
-          <p className="text-zinc-600">Loading your properties...</p>
+          <p className="text-zinc-600">{t('property.loadingProperties')}</p>
         ) : properties && properties.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {properties.map((property) => (
@@ -74,18 +95,18 @@ export default function MyPropertiesPage() {
                 <CardHeader>
                   <CardTitle>{property.title}</CardTitle>
                   <CardDescription>
-                    {property.type} - {property.status}
+                    {getTypeLabel(property.type)} - {getStatusLabel(property.status)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <Link href={`/properties/${property.propertyId}`}>
                     <Button variant="outline" className="w-full">
-                      View Details
+                      {t('property.viewDetails')}
                     </Button>
                   </Link>
                   <Link href={`/properties/${property.propertyId}/edit`}>
                     <Button variant="outline" className="w-full">
-                      Edit
+                      {t('common.edit')}
                     </Button>
                   </Link>
                   <Button
@@ -94,7 +115,7 @@ export default function MyPropertiesPage() {
                     onClick={() => handleDelete(property.propertyId, property.status)}
                     disabled={property.status !== 'ACTIVE'}
                   >
-                    Delete
+                    {t('common.delete')}
                   </Button>
                 </CardContent>
               </Card>
@@ -102,9 +123,9 @@ export default function MyPropertiesPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-zinc-600 mb-4">You don't have any properties yet.</p>
+            <p className="text-zinc-600 mb-4">{t('property.noPropertiesYet')}</p>
             <Link href="/my-properties/create">
-              <Button>Create Your First Property</Button>
+              <Button>{t('property.createFirstProperty')}</Button>
             </Link>
           </div>
         )}

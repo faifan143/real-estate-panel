@@ -7,6 +7,7 @@ import { api } from '@/lib/axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useTranslation } from 'react-i18next';
 
 interface Request {
   requestId: string;
@@ -22,6 +23,7 @@ interface Property {
 }
 
 export default function MyRequestsPage() {
+  const { t, i18n } = useTranslation();
   const { data: requests, isLoading } = useQuery({
     queryKey: ['my-requests'],
     queryFn: async () => {
@@ -41,11 +43,11 @@ export default function MyRequestsPage() {
   });
 
   const getPropertyTitle = (propertyId: string) => {
-    return properties?.find(p => p.propertyId === propertyId)?.title || 'Property';
+    return properties?.find(p => p.propertyId === propertyId)?.title || t('property.title');
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(i18n.language === 'ar' ? 'ar-SA' : 'en-US', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -65,14 +67,31 @@ export default function MyRequestsPage() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    const statusMap: Record<string, string> = {
+      PENDING: t('request.statuses.pending'),
+      APPROVED: t('request.statuses.approved'),
+      REJECTED: t('request.statuses.rejected'),
+    };
+    return statusMap[status] || status;
+  };
+
+  const getTypeLabel = (type: string) => {
+    const typeMap: Record<string, string> = {
+      BUY: t('request.types.buy'),
+      RENT: t('request.types.rent'),
+    };
+    return typeMap[type] || type;
+  };
+
   return (
     <ProtectedRoute requireRole="USER">
       <Navbar />
       <div className="container mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">My Requests</h1>
+        <h1 className="text-3xl font-bold mb-6">{t('request.myRequests')}</h1>
 
         {isLoading ? (
-          <p className="text-zinc-600">Loading your requests...</p>
+          <p className="text-zinc-600">{t('request.loadingRequests')}</p>
         ) : requests && requests.length > 0 ? (
           <div className="space-y-4">
             {requests.map((request) => (
@@ -84,20 +103,20 @@ export default function MyRequestsPage() {
                         {getPropertyTitle(request.propertyId)}
                       </CardTitle>
                       <CardDescription>
-                        {request.type} Request • Created on {formatDate(request.createdAt)}
+                        {getTypeLabel(request.type)} {t('request.request')} • {t('request.createdOn')} {formatDate(request.createdAt)}
                       </CardDescription>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(request.status)}`}>
-                      {request.status}
+                      {getStatusLabel(request.status)}
                     </div>
                   </div>
                 </CardHeader>
                 <CardContent className="flex gap-3">
                   <Link href={`/properties/${request.propertyId}`}>
-                    <Button variant="outline">View Property</Button>
+                    <Button variant="outline">{t('property.viewProperty')}</Button>
                   </Link>
                   <Link href={`/requests/${request.requestId}`}>
-                    <Button variant="outline">View Details</Button>
+                    <Button variant="outline">{t('property.viewDetails')}</Button>
                   </Link>
                 </CardContent>
               </Card>
@@ -105,9 +124,9 @@ export default function MyRequestsPage() {
           </div>
         ) : (
           <div className="text-center py-12">
-            <p className="text-zinc-600 mb-4">You haven't made any requests yet.</p>
+            <p className="text-zinc-600 mb-4">{t('request.noRequests')}</p>
             <Link href="/properties">
-              <Button>Browse Properties</Button>
+              <Button>{t('request.browseProperties')}</Button>
             </Link>
           </div>
         )}
