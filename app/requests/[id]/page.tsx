@@ -29,6 +29,11 @@ interface Meeting {
   roleInMeeting: 'BUYER' | 'SELLER';
 }
 
+interface PropertyDetail {
+  propertyId: string;
+  title: string;
+}
+
 export default function RequestDetailPage() {
   const params = useParams();
   const id = params.id as string;
@@ -40,6 +45,16 @@ export default function RequestDetailPage() {
       const response = await api.get<RequestDetail>(`/requests/${id}`);
       return response.data;
     },
+  });
+
+  // Fetch property to get its title
+  const { data: property } = useQuery({
+    queryKey: ['property', request?.propertyId],
+    queryFn: async () => {
+      const response = await api.get<PropertyDetail>(`/properties/${request?.propertyId}`);
+      return response.data;
+    },
+    enabled: !!request?.propertyId,
   });
 
   // Fetch meetings to find the one associated with this approved request
@@ -91,8 +106,10 @@ export default function RequestDetailPage() {
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <div>
-                    <CardTitle className="text-2xl">Request Details</CardTitle>
-                    <CardDescription>Request ID: {request.requestId}</CardDescription>
+                    <CardTitle className="text-2xl">
+                      {property ? property.title : `${request.type} Request`}
+                    </CardTitle>
+                    <CardDescription>{request.type} Request</CardDescription>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(request.status)}`}>
                     {request.status}
@@ -100,10 +117,6 @@ export default function RequestDetailPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <h3 className="font-semibold mb-1">Request Type</h3>
-                  <p className="text-zinc-600">{request.type}</p>
-                </div>
 
                 <div>
                   <h3 className="font-semibold mb-1">Created At</h3>

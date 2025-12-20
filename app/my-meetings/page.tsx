@@ -17,6 +17,11 @@ interface Meeting {
   roleInMeeting: 'BUYER' | 'SELLER';
 }
 
+interface Property {
+  propertyId: string;
+  title: string;
+}
+
 export default function MyMeetingsPage() {
   const { data: meetings, isLoading } = useQuery({
     queryKey: ['my-meetings'],
@@ -25,6 +30,20 @@ export default function MyMeetingsPage() {
       return response.data;
     },
   });
+
+  // Fetch all properties to get titles
+  const { data: properties } = useQuery({
+    queryKey: ['properties'],
+    queryFn: async () => {
+      const response = await api.get<Property[]>('/properties');
+      return response.data;
+    },
+    enabled: !!meetings && meetings.length > 0,
+  });
+
+  const getPropertyTitle = (propertyId: string) => {
+    return properties?.find(p => p.propertyId === propertyId)?.title || 'Property';
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString('en-US', {
@@ -56,10 +75,10 @@ export default function MyMeetingsPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-xl">
-                        Meeting - {meeting.roleInMeeting}
+                        {getPropertyTitle(meeting.propertyId)}
                       </CardTitle>
                       <CardDescription>
-                        Scheduled for {formatDate(meeting.scheduledAt)}
+                        Scheduled for {formatDate(meeting.scheduledAt)} • You are the {meeting.roleInMeeting}
                       </CardDescription>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-medium ${getRoleBadgeColor(meeting.roleInMeeting)}`}>
@@ -68,11 +87,6 @@ export default function MyMeetingsPage() {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm text-zinc-600">
-                      Location: {meeting.latitude.toFixed(6)}, {meeting.longitude.toFixed(6)}
-                    </p>
-                  </div>
                   <div className="flex gap-3">
                     <Link href={`/properties/${meeting.propertyId}`}>
                       <Button variant="outline">View Property</Button>

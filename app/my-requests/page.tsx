@@ -16,6 +16,11 @@ interface Request {
   createdAt: string;
 }
 
+interface Property {
+  propertyId: string;
+  title: string;
+}
+
 export default function MyRequestsPage() {
   const { data: requests, isLoading } = useQuery({
     queryKey: ['my-requests'],
@@ -24,6 +29,20 @@ export default function MyRequestsPage() {
       return response.data;
     },
   });
+
+  // Fetch all properties to get titles
+  const { data: properties } = useQuery({
+    queryKey: ['properties'],
+    queryFn: async () => {
+      const response = await api.get<Property[]>('/properties');
+      return response.data;
+    },
+    enabled: !!requests && requests.length > 0,
+  });
+
+  const getPropertyTitle = (propertyId: string) => {
+    return properties?.find(p => p.propertyId === propertyId)?.title || 'Property';
+  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -62,10 +81,10 @@ export default function MyRequestsPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <CardTitle className="text-xl">
-                        {request.type} Request
+                        {getPropertyTitle(request.propertyId)}
                       </CardTitle>
                       <CardDescription>
-                        Created on {formatDate(request.createdAt)}
+                        {request.type} Request • Created on {formatDate(request.createdAt)}
                       </CardDescription>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(request.status)}`}>

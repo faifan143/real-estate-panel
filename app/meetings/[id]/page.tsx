@@ -8,6 +8,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+import { useAuthStore } from '@/store/auth';
+
+// Dynamically import MapViewer to avoid SSR issues
+const DynamicMapViewer = dynamic(
+  () => import('@/components/ui/map-viewer').then((mod) => ({ default: mod.MapViewer })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 bg-zinc-100 rounded-lg flex items-center justify-center">
+        <p className="text-zinc-600">Loading map...</p>
+      </div>
+    ),
+  }
+);
 
 interface MeetingDetail {
   meetingId: string;
@@ -20,9 +35,15 @@ interface MeetingDetail {
   status: string;
 }
 
+interface PropertyDetail {
+  propertyId: string;
+  title: string;
+}
+
 export default function MeetingDetailPage() {
   const params = useParams();
   const id = params.id as string;
+  const { userId } = useAuthStore();
 
   const { data: meeting, isLoading } = useQuery({
     queryKey: ['meeting', id],
@@ -30,6 +51,16 @@ export default function MeetingDetailPage() {
       const response = await api.get<MeetingDetail>(`/meetings/${id}`);
       return response.data;
     },
+  });
+
+  // Fetch property to get its title
+  const { data: property } = useQuery({
+    queryKey: ['property', meeting?.propertyId],
+    queryFn: async () => {
+      const response = await api.get<PropertyDetail>(`/properties/${meeting?.propertyId}`);
+      return response.data;
+    },
+    enabled: !!meeting?.propertyId,
   });
 
   const formatDate = (dateString: string) => {
@@ -53,7 +84,9 @@ export default function MeetingDetailPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-2xl">Meeting Details</CardTitle>
-                <CardDescription>Meeting ID: {meeting.meetingId}</CardDescription>
+                {property && (
+                  <CardDescription>{property.title}</CardDescription>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -69,27 +102,25 @@ export default function MeetingDetailPage() {
                 </div>
 
                 <div>
-                  <h3 className="font-semibold mb-1">Location</h3>
-                  <p className="text-zinc-600">
-                    Latitude: {meeting.latitude.toFixed(6)}
+                  <h3 className="font-semibold mb-2">Meeting Location</h3>
+                  <DynamicMapViewer
+                    latitude={meeting.latitude}
+                    longitude={meeting.longitude}
+                    height="400px"
+                  />
+                  <p className="text-xs text-zinc-500 mt-2">
+                    Coordinates: {meeting.latitude.toFixed(6)}, {meeting.longitude.toFixed(6)}
                   </p>
-                  <p className="text-zinc-600">
-                    Longitude: {meeting.longitude.toFixed(6)}
-                  </p>
-                  <a
-                    href={`https://www.google.com/maps?q=${meeting.latitude},${meeting.longitude}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:underline text-sm"
-                  >
-                    Open in Google Maps →
-                  </a>
                 </div>
 
                 <div>
                   <h3 className="font-semibold mb-1">Participants</h3>
-                  <p className="text-zinc-600 text-sm">Buyer ID: {meeting.buyerId}</p>
-                  <p className="text-zinc-600 text-sm">Seller ID: {meeting.sellerId}</p>
+                  <p className="text-zinc-600 text-sm">
+                    {meeting.buyerId === userId ? 'You (Buyer)' : 'Buyer'}
+                  </p>
+                  <p className="text-zinc-600 text-sm">
+                    {meeting.sellerId === userId ? 'You (Seller)' : 'Seller'}
+                  </p>
                 </div>
 
                 <div className="pt-4 border-t">
