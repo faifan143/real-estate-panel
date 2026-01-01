@@ -7,12 +7,13 @@ export function I18nClient({ children }: { children: React.ReactNode }) {
   const { i18n } = useTranslation();
 
   useEffect(() => {
-    // Update HTML lang and dir attributes when language changes
+    // Always set to Arabic
     if (typeof document !== 'undefined') {
-      document.documentElement.lang = i18n.language || 'en';
-      document.documentElement.dir = i18n.language === 'ar' ? 'rtl' : 'ltr';
+      i18n.changeLanguage('ar');
+      document.documentElement.lang = 'ar';
+      document.documentElement.dir = 'rtl';
     }
-  }, [i18n.language]);
+  }, [i18n]);
 
   return <>{children}</>;
 }

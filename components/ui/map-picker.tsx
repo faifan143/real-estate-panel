@@ -22,6 +22,7 @@ interface MapPickerProps {
   mapKey?: string | number; // used to force remount from parent when needed
 }
 
+
 export function MapPicker({
   latitude,
   longitude,
@@ -43,7 +44,7 @@ export function MapPicker({
   useEffect(() => {
     if (!navigator.geolocation) {
       setError(t('map.geolocationNotSupported'));
-      setCurrentLocation([37.7749, -122.4194]);
+      setCurrentLocation([-122.4194, 37.7749]); // [lng, lat] format
       setLoading(false);
       return;
     }
@@ -51,7 +52,7 @@ export function MapPicker({
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude: lat, longitude: lng } = position.coords;
-        setCurrentLocation([lat, lng]);
+        setCurrentLocation([lng, lat]); // [lng, lat] format
         setLoading(false);
 
         // If no coordinates are set yet, use current location
@@ -60,9 +61,22 @@ export function MapPicker({
         }
       },
       (err) => {
-        console.error("Error getting location:", err);
-        setError(t('map.unableToGetLocation'));
-        setCurrentLocation([37.7749, -122.4194]);
+        // GeolocationPositionError has code and message properties
+        // Use console.warn since this is a handled error scenario
+        console.warn("Unable to get location:", err.message, "- Code:", err.code);
+        
+        // Provide specific error message based on error code
+        let errorMessage = t('map.unableToGetLocation');
+        if (err.code === 1) {
+          errorMessage = t('map.locationPermissionDenied') || 'Location permission denied. Using default location.';
+        } else if (err.code === 2) {
+          errorMessage = t('map.locationUnavailable') || 'Location unavailable. Using default location.';
+        } else if (err.code === 3) {
+          errorMessage = t('map.locationTimeout') || 'Location request timed out. Using default location.';
+        }
+        
+        setError(errorMessage);
+        setCurrentLocation([-122.4194, 37.7749]); // [lng, lat] format
         setLoading(false);
       }
     );
@@ -90,8 +104,8 @@ export function MapPicker({
     // Clear container
     mapContainerRef.current.innerHTML = "";
 
-    // Default center (San Francisco)
-    const defaultCenter: [number, number] = [37.7749, -122.4194];
+    // Default center (San Francisco) - Mapbox uses [longitude, latitude]
+    const defaultCenter: [number, number] = [-122.4194, 37.7749];
     const initialCenter: [number, number] =
       latitude !== null && longitude !== null
         ? [longitude, latitude]

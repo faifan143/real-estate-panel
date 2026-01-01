@@ -4,9 +4,12 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Navbar } from '@/components/navbar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
+import { useAuthStore } from '@/store/auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { Clock, Search, ShoppingBag, Home as HomeIcon, User, MapPin, Calendar, CheckCircle, XCircle, Eye, Filter, X } from 'lucide-react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import {
   Dialog,
   DialogContent,
@@ -50,10 +53,14 @@ interface Property {
 
 export default function AdminRequestsPage() {
   const { t, i18n } = useTranslation();
+  const { token, isInitialized } = useAuthStore();
   const queryClient = useQueryClient();
   const [approveModalOpen, setApproveModalOpen] = useState(false);
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<AdminRequest | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   const { data: requests, isLoading } = useQuery({
     queryKey: ['admin-requests'],
@@ -61,6 +68,8 @@ export default function AdminRequestsPage() {
       const response = await api.get<AdminRequest[]>('/admin/requests?status=PENDING');
       return response.data;
     },
+    enabled: !!token && isInitialized,
+    staleTime: 60 * 1000,
   });
 
   // Fetch all properties to get titles
@@ -70,7 +79,8 @@ export default function AdminRequestsPage() {
       const response = await api.get<Property[]>('/properties');
       return response.data;
     },
-    enabled: !!requests && requests.length > 0,
+    enabled: !!token && isInitialized && !!requests && requests.length > 0,
+    staleTime: 60 * 1000,
   });
 
   const getPropertyTitle = (propertyId: string) => {
@@ -101,6 +111,34 @@ export default function AdminRequestsPage() {
   const openRejectModal = (request: AdminRequest) => {
     setSelectedRequest(request);
     setRejectModalOpen(true);
+  };
+
+  // Filter and search logic
+  const filteredRequests = useMemo(() => {
+    if (!requests) return [];
+    
+    return requests.filter((request) => {
+      const propertyTitle = getPropertyTitle(request.propertyId);
+      const matchesSearch = searchQuery
+        ? propertyTitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          request.requestId.toLowerCase().includes(searchQuery.toLowerCase())
+        : true;
+      
+      const matchesType = selectedType === 'all' || request.type === selectedType;
+      
+      return matchesSearch && matchesType;
+    });
+  }, [requests, searchQuery, selectedType, properties]);
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedType('all');
+  };
+
+  const hasActiveFilters = searchQuery || selectedType !== 'all';
+
+  const getTypeIcon = (type: string) => {
+    return type === 'BUY' ? ShoppingBag : HomeIcon;
   };
 
   return (

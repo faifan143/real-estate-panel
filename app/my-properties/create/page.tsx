@@ -38,7 +38,6 @@ const propertySchema = yup.object({
   address: yup.string().optional(),
   description: yup.string().optional(),
   price: yup.number().min(0, 'Price must be positive').optional().nullable(),
-  location: yup.string().optional(),
   latitude: yup.number().optional().nullable(),
   longitude: yup.number().optional().nullable(),
   area: yup.number().min(0, 'Area must be positive').integer('Area must be an integer').optional().nullable(),
@@ -143,11 +142,6 @@ export default function CreatePropertyPage() {
                     {...register('price', { valueAsNumber: true })}
                   />
                   {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
-                </div>
-
-                <div>
-                  <Label htmlFor="location">{t('property.location')}</Label>
-                  <Input id="location" {...register('location')} />
                 </div>
 
                 <div>

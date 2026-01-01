@@ -15,7 +15,8 @@
     "close": "Close",
     "confirm": "Confirm",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "optional": "Optional"
   },
   "auth": {
     "login": "Login",
@@ -39,7 +40,8 @@
     "myProperties": "My Properties",
     "myRequests": "My Requests",
     "myMeetings": "My Meetings",
-    "adminRequests": "Admin Requests"
+    "adminRequests": "Admin Requests",
+    "profile": "Profile"
   },
   "property": {
     "title": "Title",
@@ -188,6 +190,9 @@
     "dragMarkerToAdjust": "Drag the marker to adjust",
     "geolocationNotSupported": "Geolocation is not supported by your browser.",
     "unableToGetLocation": "Unable to get your location. Please allow location access or click on the map to set a location.",
+    "locationPermissionDenied": "Location permission denied. Please allow location access in your browser settings, or click on the map to set a location manually.",
+    "locationUnavailable": "Location service unavailable. Please enable location services in Windows Settings > Privacy > Location, or click on the map to set a location manually.",
+    "locationTimeout": "Location request timed out. Please check your internet connection, or click on the map to set a location manually.",
     "invalidMapboxToken": "Invalid Mapbox token. Please check your NEXT_PUBLIC_MAPBOX_TOKEN environment variable or get a new token from https://account.mapbox.com/",
     "failedToLoadMap": "Failed to load map"
   },
@@ -195,6 +200,16 @@
     "english": "English",
     "arabic": "Arabic",
     "switchLanguage": "Switch Language"
+  },
+  "profile": {
+    "title": "Profile",
+    "updateProfile": "Update Profile",
+    "updateDescription": "Update your personal information",
+    "emailCannotChange": "Email cannot be changed",
+    "firstName": "First Name",
+    "lastName": "Last Name",
+    "phone": "Phone",
+    "updateSuccess": "Profile updated successfully"
   }
 }
 

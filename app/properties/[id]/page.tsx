@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'react-i18next';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 
 // Dynamically import MapViewer to avoid SSR issues
 const DynamicMapViewer = dynamic(
@@ -42,7 +43,6 @@ interface PropertyDetail {
   address?: string;
   description?: string;
   price?: number;
-  location?: string;
   latitude?: number;
   longitude?: number;
   area?: number;
@@ -61,6 +61,11 @@ export default function PropertyDetailPage() {
   const { userId, role } = useAuthStore();
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [deleteImageDialog, setDeleteImageDialog] = useState<{
+    open: boolean;
+    imageId: string | null;
+    fileName: string;
+  }>({ open: false, imageId: null, fileName: '' });
 
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', id],
@@ -86,7 +91,7 @@ export default function PropertyDetailPage() {
     enabled: role === 'USER' && !!property && property.status === 'ACTIVE' && property.ownerId !== userId,
   });
 
-  const isOwner = property && userId === property.ownerId;
+  const isOwner = property && userId && String(property.ownerId) === String(userId);
   const canEdit = role === 'ADMIN' || isOwner;
   
   // Check if user has existing PENDING or APPROVED request for this property
@@ -138,14 +143,31 @@ export default function PropertyDetailPage() {
   };
 
   const handleUpload = () => {
+    if (!canEdit) {
+      toast.error('ليس لديك صلاحية لرفع الصور على هذا العقار');
+      return;
+    }
     if (selectedFile) {
       uploadImageMutation.mutate(selectedFile);
     }
   };
 
-  const handleDeleteImage = (imageId: string) => {
-    if (confirm(t('common.confirm'))) {
-      deleteImageMutation.mutate(imageId);
+  const handleDeleteImage = (imageId: string, fileName: string) => {
+    if (!canEdit) {
+      toast.error('ليس لديك صلاحية لحذف الصور من هذا العقار');
+      return;
+    }
+    setDeleteImageDialog({
+      open: true,
+      imageId,
+      fileName,
+    });
+  };
+
+  const confirmDeleteImage = () => {
+    if (deleteImageDialog.imageId) {
+      deleteImageMutation.mutate(deleteImageDialog.imageId);
+      setDeleteImageDialog({ open: false, imageId: null, fileName: '' });
     }
   };
 
@@ -171,123 +193,158 @@ export default function PropertyDetailPage() {
   return (
     <ProtectedRoute>
       <Navbar />
-      <div className="container mx-auto p-8">
+      <div className="bg-background min-h-screen">
         {isLoading ? (
-          <p className="text-zinc-600">{t('property.loadingPropertyDetails')}</p>
+          <div className="container mx-auto px-6 lg:px-10 py-12">
+            <p className="text-muted-foreground text-center">{t('property.loadingPropertyDetails')}</p>
+          </div>
         ) : property ? (
-          <div className="max-w-4xl mx-auto">
-            <Card>
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-3xl">{property.title}</CardTitle>
-                    <CardDescription className="text-lg mt-2">
-                      {getTypeLabel(property.type)} - {getStatusLabel(property.status)}
-                    </CardDescription>
-                  </div>
-                  {canEdit && (
-                    <Link href={`/properties/${id}/edit`}>
-                      <Button variant="outline">{t('property.editProperty')}</Button>
-                    </Link>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {property.address && (
-                  <div>
-                    <h3 className="font-semibold mb-1">{t('property.address')}</h3>
-                    <p className="text-zinc-600">{property.address}</p>
-                  </div>
-                )}
-
-                {property.description && (
-                  <div>
-                    <h3 className="font-semibold mb-1">{t('property.description')}</h3>
-                    <p className="text-zinc-600">{property.description}</p>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {property.price !== undefined && property.price !== null && (
-                    <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.price')}</h3>
-                      <p className="text-zinc-900 font-medium">${property.price.toLocaleString()}</p>
-                    </div>
-                  )}
-                  {property.area !== undefined && property.area !== null && (
-                    <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.area')}</h3>
-                      <p className="text-zinc-900 font-medium">{property.area} sq ft</p>
-                    </div>
-                  )}
-                  {property.rooms !== undefined && property.rooms !== null && (
-                    <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.rooms')}</h3>
-                      <p className="text-zinc-900 font-medium">{property.rooms}</p>
-                    </div>
-                  )}
-                  {property.floor !== undefined && property.floor !== null && (
-                    <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.floor')}</h3>
-                      <p className="text-zinc-900 font-medium">{property.floor}</p>
-                    </div>
-                  )}
-                  {property.location && (
-                    <div>
-                      <h3 className="font-semibold mb-1 text-sm text-zinc-500">{t('property.location')}</h3>
-                      <p className="text-zinc-900 font-medium">{property.location}</p>
-                    </div>
-                  )}
-                </div>
-
-                {(property.latitude !== undefined && property.latitude !== null) &&
-                (property.longitude !== undefined && property.longitude !== null) ? (
-                  <div>
-                    <h3 className="font-semibold mb-2">{t('property.locationOnMap')}</h3>
-                    <DynamicMapViewer
-                      latitude={property.latitude}
-                      longitude={property.longitude}
-                      height="400px"
+          <div className="max-w-7xl mx-auto px-6 lg:px-10 py-8">
+            {/* Property Images Gallery */}
+            <div className="mb-8">
+              {property.images.length > 0 ? (
+                <div className="grid grid-cols-4 gap-2 h-[500px] rounded-2xl overflow-hidden">
+                  <div className="col-span-2 row-span-2">
+                    <img
+                      src={property.images[0].url}
+                      alt={property.title}
+                      className="w-full h-full object-cover hover:brightness-95 transition-all cursor-pointer"
                     />
-                    <p className="text-xs text-zinc-500 mt-2">
-                      {t('property.coordinates')}: {property.latitude.toFixed(6)}, {property.longitude.toFixed(6)}
+                  </div>
+                  {property.images.slice(1, 5).map((image, idx) => (
+                    <div key={image.imageId} className={idx >= 2 ? "col-span-1" : "col-span-1 row-span-1"}>
+                      <img
+                        src={image.url}
+                        alt={`${property.title} ${idx + 2}`}
+                        className="w-full h-full object-cover hover:brightness-95 transition-all cursor-pointer"
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="w-full h-[500px] bg-muted rounded-2xl flex items-center justify-center">
+                  <p className="text-muted-foreground">{t('property.noImages')}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+              {/* Main Content */}
+              <div className="lg:col-span-2 space-y-8">
+                {/* Header */}
+                <div className="space-y-4 pb-8 border-b">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h1 className="text-3xl font-semibold text-foreground mb-2">
+                        {property.title}
+                      </h1>
+                      <div className="flex items-center gap-3 text-base text-muted-foreground">
+                        <span>{getTypeLabel(property.type)}</span>
+                        <span>·</span>
+                        <span className="px-3 py-1 bg-muted rounded-full text-sm font-medium">
+                          {getStatusLabel(property.status)}
+                        </span>
+                        {isOwner && (
+                          <>
+                            <span>·</span>
+                            <span className="px-3 py-1 bg-primary/10 text-primary rounded-full text-sm font-semibold">
+                              عقارك
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {canEdit && (
+                      <Link href={`/properties/${id}/edit`}>
+                        <Button variant="outline" size="sm">{t('property.editProperty')}</Button>
+                      </Link>
+                    )}
+                  </div>
+                  
+                  {/* Property Stats */}
+                  <div className="flex items-center gap-4 text-base">
+                    {property.rooms && (
+                      <span className="font-medium">{property.rooms} غرف</span>
+                    )}
+                    {property.area && (
+                      <>
+                        {property.rooms && <span className="text-muted-foreground">·</span>}
+                        <span className="font-medium">{property.area} قدم مربع</span>
+                      </>
+                    )}
+                    {property.floor !== undefined && property.floor !== null && (
+                      <>
+                        <span className="text-muted-foreground">·</span>
+                        <span className="font-medium">الطابق {property.floor}</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Description */}
+                {property.description && (
+                  <div className="space-y-3 pb-8 border-b">
+                    <h2 className="text-xl font-semibold">{t('property.description')}</h2>
+                    <p className="text-base text-muted-foreground leading-relaxed">
+                      {property.description}
                     </p>
                   </div>
-                ) : null}
+                )}
 
-                <div>
-                  <h3 className="font-semibold mb-2">{t('property.images')}</h3>
-                  {property.images.length > 0 ? (
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {property.images.map((image: PropertyImage) => (
-                        <div key={image.imageId} className="relative aspect-video bg-zinc-100 rounded group">
-                          <img
-                            src={image.url}
-                            alt={image.fileName}
-                            className="w-full h-full object-cover rounded"
-                          />
-                          {canEdit && (
-                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center rounded">
+                {/* Address */}
+                {property.address && (
+                  <div className="space-y-3 pb-8 border-b">
+                    <h2 className="text-xl font-semibold">{t('property.address')}</h2>
+                    <p className="text-base text-muted-foreground">{property.address}</p>
+                  </div>
+                )}
+
+                {/* Map */}
+                {(property.latitude !== undefined && property.latitude !== null) &&
+                (property.longitude !== undefined && property.longitude !== null) && (
+                  <div className="space-y-3 pb-8 border-b">
+                    <h2 className="text-xl font-semibold">{t('property.locationOnMap')}</h2>
+                    <div className="rounded-2xl overflow-hidden">
+                      <DynamicMapViewer
+                        latitude={property.latitude}
+                        longitude={property.longitude}
+                        height="400px"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Image Management for Owner/Admin */}
+                {canEdit && (
+                  <div className="space-y-4 pb-8 border-b">
+                    <h2 className="text-xl font-semibold">{t('property.images')}</h2>
+                    
+                    {property.images.length > 0 && (
+                      <div className="grid grid-cols-3 gap-3">
+                        {property.images.map((image: PropertyImage) => (
+                          <div key={image.imageId} className="relative aspect-square bg-muted rounded-xl group overflow-hidden">
+                            <img
+                              src={image.url}
+                              alt={image.fileName}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                               <Button
                                 size="sm"
                                 variant="destructive"
-                                onClick={() => handleDeleteImage(image.imageId)}
+                                onClick={() => handleDeleteImage(image.imageId, image.fileName)}
                               >
                                 {t('common.delete')}
                               </Button>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-zinc-500 text-sm">{t('property.noImages')}</p>
-                  )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
-                  {canEdit && (
-                    <div className="mt-4 p-4 bg-zinc-50 rounded-lg">
-                      <h4 className="font-semibold mb-2 text-sm">{t('property.uploadImage')}</h4>
-                      <div className="flex gap-2">
+                    <div className="bg-muted/50 rounded-2xl p-6 space-y-3">
+                      <h3 className="font-semibold">{t('property.uploadImage')}</h3>
+                      <div className="flex gap-3">
                         <Input
                           type="file"
                           accept="image/*"
@@ -302,31 +359,97 @@ export default function PropertyDetailPage() {
                         </Button>
                       </div>
                     </div>
-                  )}
-                </div>
-
-                {canCreateRequest && (
-                  <div className="pt-4 border-t">
-                    <h3 className="font-semibold mb-3">{t('request.request')} {t('property.title')}</h3>
-                    <div className="flex gap-3">
-                      <CreateRequestButton propertyId={id} type="BUY" />
-                      <CreateRequestButton propertyId={id} type="RENT" variant="outline" />
-                    </div>
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
 
-            <div className="mt-6">
+              {/* Sticky Sidebar */}
+              <div className="lg:col-span-1">
+                <Card className="sticky top-24 p-6 shadow-xl border-2">
+                  <div className="space-y-6">
+                    {/* Price */}
+                    {property.price !== undefined && property.price !== null && (
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-3xl font-semibold text-foreground">
+                            ${property.price.toLocaleString()}
+                          </span>
+                          <span className="text-muted-foreground">/ شهر</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Request Buttons */}
+                    {canCreateRequest && (
+                      <div className="space-y-3 pt-4 border-t">
+                        <CreateRequestButton propertyId={id} type="BUY" />
+                        <CreateRequestButton propertyId={id} type="RENT" variant="outline" />
+                      </div>
+                    )}
+
+                    {/* Property Details Grid */}
+                    <div className="pt-6 border-t space-y-4">
+                      <h3 className="font-semibold text-base">تفاصيل العقار</h3>
+                      <div className="space-y-3">
+                        {property.type && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">النوع</span>
+                            <span className="font-medium">{getTypeLabel(property.type)}</span>
+                          </div>
+                        )}
+                        {property.rooms !== undefined && property.rooms !== null && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">عدد الغرف</span>
+                            <span className="font-medium">{property.rooms}</span>
+                          </div>
+                        )}
+                        {property.area !== undefined && property.area !== null && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">المساحة</span>
+                            <span className="font-medium">{property.area} قدم²</span>
+                          </div>
+                        )}
+                        {property.floor !== undefined && property.floor !== null && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">الطابق</span>
+                            <span className="font-medium">{property.floor}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+
+            {/* Back Button */}
+            <div className="mt-12 pb-12">
               <Link href="/properties">
-                <Button variant="ghost">← {t('common.back')} {t('nav.properties')}</Button>
+                <Button variant="ghost" size="lg" className="gap-2">
+                  ← {t('common.back')} إلى {t('nav.properties')}
+                </Button>
               </Link>
             </div>
           </div>
         ) : (
-          <p className="text-zinc-600">{t('property.propertyNotFound')}</p>
+          <div className="container mx-auto px-6 lg:px-10 py-12">
+            <p className="text-muted-foreground text-center">{t('property.propertyNotFound')}</p>
+          </div>
         )}
       </div>
+
+      {/* Delete Image Confirmation Dialog */}
+      <ConfirmationDialog
+        open={deleteImageDialog.open}
+        onOpenChange={(open) => setDeleteImageDialog({ ...deleteImageDialog, open })}
+        title="حذف الصورة"
+        description={`هل أنت متأكد من حذف "${deleteImageDialog.fileName}"? هذا الإجراء لا يمكن التراجع عنه.`}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        onConfirm={confirmDeleteImage}
+        variant="destructive"
+        loading={deleteImageMutation.isPending}
+      />
     </ProtectedRoute>
   );
 }
@@ -364,6 +487,7 @@ function CreateRequestButton({
       variant={variant}
       onClick={() => createRequestMutation.mutate()}
       disabled={createRequestMutation.isPending}
+      className="w-full"
     >
       {createRequestMutation.isPending ? t('common.loading') : `${t('request.request')} ${type === 'BUY' ? t('request.types.buy') : t('request.types.rent')}`}
     </Button>

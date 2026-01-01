@@ -15,7 +15,8 @@
     "close": "إغلاق",
     "confirm": "تأكيد",
     "yes": "نعم",
-    "no": "لا"
+    "no": "لا",
+    "optional": "اختياري"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -39,7 +40,8 @@
     "myProperties": "عقاراتي",
     "myRequests": "طلباتي",
     "myMeetings": "اجتماعاتي",
-    "adminRequests": "طلبات الإدارة"
+    "adminRequests": "طلبات الإدارة",
+    "profile": "الملف الشخصي"
   },
   "property": {
     "title": "العنوان",
@@ -188,6 +190,9 @@
     "dragMarkerToAdjust": "اسحب العلامة للتعديل",
     "geolocationNotSupported": "الموقع الجغرافي غير مدعوم في متصفحك.",
     "unableToGetLocation": "تعذر الحصول على موقعك. يرجى السماح بالوصول إلى الموقع أو النقر على الخريطة لتعيين موقع.",
+    "locationPermissionDenied": "تم رفض إذن الموقع. يرجى السماح بالوصول إلى الموقع في إعدادات المتصفح، أو انقر على الخريطة لتعيين الموقع يدوياً.",
+    "locationUnavailable": "خدمة الموقع غير متاحة. يرجى تمكين خدمات الموقع في إعدادات Windows > الخصوصية > الموقع، أو انقر على الخريطة لتعيين الموقع يدوياً.",
+    "locationTimeout": "انتهت مهلة طلب الموقع. يرجى التحقق من اتصال الإنترنت، أو انقر على الخريطة لتعيين الموقع يدوياً.",
     "invalidMapboxToken": "رمز Mapbox غير صالح. يرجى التحقق من متغير البيئة NEXT_PUBLIC_MAPBOX_TOKEN أو الحصول على رمز جديد من https://account.mapbox.com/",
     "failedToLoadMap": "فشل تحميل الخريطة"
   },
@@ -195,6 +200,16 @@
     "english": "الإنجليزية",
     "arabic": "العربية",
     "switchLanguage": "تغيير اللغة"
+  },
+  "profile": {
+    "title": "الملف الشخصي",
+    "updateProfile": "تحديث الملف الشخصي",
+    "updateDescription": "قم بتحديث معلوماتك الشخصية",
+    "emailCannotChange": "لا يمكن تغيير البريد الإلكتروني",
+    "firstName": "الاسم الأول",
+    "lastName": "اسم العائلة",
+    "phone": "الهاتف",
+    "updateSuccess": "تم تحديث الملف الشخصي بنجاح"
   }
 }
 

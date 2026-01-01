@@ -45,66 +45,59 @@ export function MapViewer({ latitude, longitude, height = "400px" }: MapViewerPr
       style: "mapbox://styles/mapbox/streets-v12",
       center: [longitude, latitude],
       zoom: 13,
-      interactive: true, // Allow zoom/pan but no clicking
+      interactive: true,
     });
 
     mapRef.current = map;
 
-    // Create pin-shaped marker
+    // Create a proper marker element
     const el = document.createElement("div");
-    el.className = "custom-marker";
-    el.style.cssText = `
-      width: 0;
-      height: 0;
-      position: relative;
-      cursor: default;
-      pointer-events: none;
-    `;
+    el.style.display = "flex";
+    el.style.flexDirection = "column";
+    el.style.alignItems = "center";
+    el.style.justifyContent = "flex-end";
+    el.style.width = "40px";
+    el.style.height = "50px";
+    el.style.cursor = "pointer";
     
-    // Pin head (circular top)
-    const pinHead = document.createElement("div");
-    pinHead.style.cssText = `
+    // Pin circle (top part)
+    const pinCircle = document.createElement("div");
+    pinCircle.style.cssText = `
       width: 32px;
       height: 32px;
       background-color: #3b82f6;
       border: 3px solid white;
       border-radius: 50%;
-      position: absolute;
-      bottom: 16px;
-      left: 50%;
-      transform: translateX(-50%);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
     `;
-    el.appendChild(pinHead);
     
-    // Inner dot on pin head
+    // Inner white dot
     const innerDot = document.createElement("div");
     innerDot.style.cssText = `
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       background-color: white;
       border-radius: 50%;
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
     `;
-    pinHead.appendChild(innerDot);
+    pinCircle.appendChild(innerDot);
     
-    // Pin point (triangle pointing down)
+    // Pin point (triangle)
     const pinPoint = document.createElement("div");
     pinPoint.style.cssText = `
       width: 0;
       height: 0;
       border-left: 8px solid transparent;
       border-right: 8px solid transparent;
-      border-top: 16px solid #3b82f6;
-      position: absolute;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+      border-top: 12px solid #3b82f6;
+      filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+      flex-shrink: 0;
     `;
+    
+    el.appendChild(pinCircle);
     el.appendChild(pinPoint);
 
     // Create marker
@@ -146,4 +139,3 @@ export function MapViewer({ latitude, longitude, height = "400px" }: MapViewerPr
     </div>
   );
 }
-

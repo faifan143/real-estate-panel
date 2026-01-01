@@ -4,27 +4,76 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Navbar } from '@/components/navbar';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
+import { useAuthStore } from '@/store/auth';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import Link from 'next/link';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useTranslation } from 'react-i18next';
+import { MapPin, Home, Search, SlidersHorizontal, X, Bed, Maximize } from 'lucide-react';
+import { useState, useMemo } from 'react';
+
+interface PropertyImage {
+  imageId: string;
+  fileName: string;
+  url: string;
+}
 
 interface Property {
   propertyId: string;
   title: string;
   type: string;
   status: string;
+  price?: number;
+  location?: string;
+  area?: number;
+  rooms?: number;
+  images?: PropertyImage[];
 }
 
 export default function PropertiesPage() {
   const { t } = useTranslation();
+  const { token, isInitialized } = useAuthStore();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
+  const [showFilters, setShowFilters] = useState(false);
+
   const { data: properties, isLoading } = useQuery({
     queryKey: ['properties'],
     queryFn: async () => {
       const response = await api.get<Property[]>('/properties');
-      return response.data;
+      const allProperties = response.data;
+      
+      // Check if images field exists in the response
+      const hasImagesField = allProperties.length > 0 && 'images' in allProperties[0];
+      
+      // If images field doesn't exist, fetch them from individual property details
+      if (!hasImagesField) {
+        const propertiesWithImages = await Promise.all(
+          allProperties.map(async (property) => {
+            try {
+              const detailResponse = await api.get<Property>(`/properties/${property.propertyId}`);
+              return {
+                ...property,
+                images: detailResponse.data.images || [],
+              };
+            } catch {
+              return {
+                ...property,
+                images: [],
+              };
+            }
+          })
+        );
+        return propertiesWithImages;
+      }
+      
+      return allProperties;
     },
+    enabled: !!token && isInitialized,
+    staleTime: 60 * 1000,
   });
 
   const getTypeLabel = (type: string) => {
@@ -46,37 +95,306 @@ export default function PropertiesPage() {
     return statusMap[status] || status;
   };
 
+  // Filter and search properties
+  const filteredProperties = useMemo(() => {
+    if (!properties) return [];
+
+    return properties.filter((property) => {
+      // Search filter
+      const matchesSearch = searchQuery === '' || 
+        property.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        property.location?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // Type filter
+      const matchesType = selectedType === 'all' || property.type === selectedType;
+
+      // Status filter
+      const matchesStatus = selectedStatus === 'all' || property.status === selectedStatus;
+
+      return matchesSearch && matchesType && matchesStatus;
+    });
+  }, [properties, searchQuery, selectedType, selectedStatus]);
+
+  const propertyTypes = ['all', 'APARTMENT', 'HOUSE', 'COMMERCIAL', 'LAND'];
+  const propertyStatuses = ['all', 'ACTIVE', 'RESERVED', 'CLOSED'];
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setSelectedType('all');
+    setSelectedStatus('all');
+  };
+
+  const hasActiveFilters = searchQuery !== '' || selectedType !== 'all' || selectedStatus !== 'all';
+
   return (
     <ProtectedRoute>
       <Navbar />
-      <div className="container mx-auto p-8">
-        <h1 className="text-3xl font-bold mb-6">{t('nav.properties')}</h1>
+      <div className="bg-background min-h-screen">
+        <div className="container mx-auto px-6 lg:px-10 py-8">
+          {/* Header Section */}
+       
 
-        {isLoading ? (
-          <LoadingSpinner className="py-12" />
-        ) : properties && properties.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <Card key={property.propertyId}>
-                <CardHeader>
-                  <CardTitle>{property.title}</CardTitle>
-                  <CardDescription>
-                    {getTypeLabel(property.type)} - {getStatusLabel(property.status)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Link href={`/properties/${property.propertyId}`}>
-                    <Button variant="outline" className="w-full">
-                      {t('property.viewDetails')}
+          {/* Search and Filter Section */}
+          <div className="mb-8 space-y-4">
+            {/* Search Bar */}
+            <div className="flex flex-col md:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                <Input
+                  type="text"
+                  placeholder="ابحث عن عقار أو موقع..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pr-12 h-14 text-base"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery('')}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                )}
+              </div>
+              
+              <Button
+                variant={showFilters ? "default" : "outline"}
+                size="lg"
+                onClick={() => setShowFilters(!showFilters)}
+                className="md:w-auto h-14 gap-2"
+              >
+                <SlidersHorizontal className="w-5 h-5" />
+                <span>تصفية</span>
+                {hasActiveFilters && (
+                  <span className="bg-white text-primary rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">
+                    {[selectedType !== 'all', selectedStatus !== 'all', searchQuery !== ''].filter(Boolean).length}
+                  </span>
+                )}
+              </Button>
+            </div>
+
+            {/* Filter Panel */}
+            {showFilters && (
+              <div className="bg-white rounded-2xl border-2 border-border p-6 space-y-6 animate-in slide-in-from-top-2 fade-in-0">
+                {/* Type Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-foreground">نوع العقار</label>
+                  <div className="flex flex-wrap gap-2">
+                    {propertyTypes.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setSelectedType(type)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                          selectedType === type
+                            ? 'bg-primary text-white shadow-md'
+                            : 'bg-muted hover:bg-muted/80 text-foreground'
+                        }`}
+                      >
+                        {type === 'all' ? 'الكل' : getTypeLabel(type)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Status Filter */}
+                <div className="space-y-3">
+                  <label className="text-sm font-semibold text-foreground">الحالة</label>
+                  <div className="flex flex-wrap gap-2">
+                    {propertyStatuses.map((status) => (
+                      <button
+                        key={status}
+                        onClick={() => setSelectedStatus(status)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                          selectedStatus === status
+                            ? 'bg-primary text-white shadow-md'
+                            : 'bg-muted hover:bg-muted/80 text-foreground'
+                        }`}
+                      >
+                        {status === 'all' ? 'الكل' : getStatusLabel(status)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Clear Filters */}
+                {hasActiveFilters && (
+                  <div className="pt-4 border-t flex justify-between items-center">
+                    <p className="text-sm text-muted-foreground">
+                      {filteredProperties.length} من {properties?.length || 0} عقار
+                    </p>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearFilters}
+                      className="gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      مسح الفلاتر
                     </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Active Filters Display */}
+            {hasActiveFilters && !showFilters && (
+              <div className="flex flex-wrap gap-2 items-center">
+                <span className="text-sm text-muted-foreground">التصفية النشطة:</span>
+                {selectedType !== 'all' && (
+                  <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                    {getTypeLabel(selectedType)}
+                    <button onClick={() => setSelectedType('all')}>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                )}
+                {selectedStatus !== 'all' && (
+                  <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                    {getStatusLabel(selectedStatus)}
+                    <button onClick={() => setSelectedStatus('all')}>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                )}
+                {searchQuery && (
+                  <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium flex items-center gap-2">
+                    "{searchQuery}"
+                    <button onClick={() => setSearchQuery('')}>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                )}
+                <button
+                  onClick={clearFilters}
+                  className="text-sm text-muted-foreground hover:text-foreground underline"
+                >
+                  مسح الكل
+                </button>
+              </div>
+            )}
           </div>
-        ) : (
-          <p className="text-zinc-600">{t('property.noProperties')}</p>
-        )}
+
+          {isLoading ? (
+            <LoadingSpinner className="py-12" />
+          ) : filteredProperties && filteredProperties.length > 0 ? (
+            <>
+              {/* Results Count */}
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground">
+                  {filteredProperties.length} {filteredProperties.length === 1 ? 'عقار' : 'عقارات'}
+                  {hasActiveFilters && ` من ${properties?.length || 0}`}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredProperties.map((property) => {
+                const firstImage = property.images && property.images.length > 0 ? property.images[0] : null;
+                
+                return (
+                  <Link 
+                    key={property.propertyId} 
+                    href={`/properties/${property.propertyId}`}
+                    className="group cursor-pointer"
+                  >
+                    <Card className="overflow-hidden border-0 p-0 hover:shadow-2xl transition-all duration-300">
+                      {/* Property Image */}
+                      <div className="relative w-full aspect-[4/3] bg-muted overflow-hidden rounded-t-2xl">
+                        {firstImage ? (
+                          <img
+                            src={firstImage.url}
+                            alt={property.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/5 via-muted to-muted/50">
+                            <Home className="w-16 h-16 text-muted-foreground/30" />
+                          </div>
+                        )}
+                        
+                        {/* Gradient Overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                        
+                        {/* Type Badge */}
+                        <div className="absolute top-3 left-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
+                          {getTypeLabel(property.type)}
+                        </div>
+                        
+                        {/* Status Badge */}
+                        {property.status !== 'ACTIVE' && (
+                          <div className="absolute top-3 right-3 bg-primary text-white px-3 py-1.5 rounded-full text-xs font-semibold shadow-lg">
+                            {getStatusLabel(property.status)}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Property Details */}
+                      <div className="p-4 space-y-2 bg-white rounded-b-2xl">
+                        {/* Location */}
+                        {property.location && (
+                          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                            <MapPin className="w-4 h-4 flex-shrink-0" />
+                            <span className="truncate">{property.location}</span>
+                          </div>
+                        )}
+
+                        {/* Title */}
+                        <h3 className="font-semibold text-foreground text-lg line-clamp-2 leading-tight group-hover:text-primary transition-colors min-h-[3.5rem]">
+                          {property.title}
+                        </h3>
+
+                        {/* Property Features */}
+                        <div className="flex items-center gap-3 text-sm text-muted-foreground pt-2">
+                          {property.rooms && (
+                            <div className="flex items-center gap-1">
+                              <Bed className="w-4 h-4" />
+                              <span className="font-medium">{property.rooms}</span>
+                            </div>
+                          )}
+                          {property.area && (
+                            <div className="flex items-center gap-1">
+                              <Maximize className="w-4 h-4" />
+                              <span className="font-medium">{property.area} قدم²</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Price */}
+                        {property.price !== undefined && property.price !== null && (
+                          <div className="pt-3 border-t">
+                            <div className="flex items-baseline gap-1">
+                              <span className="font-bold text-foreground text-xl">
+                                ${property.price.toLocaleString()}
+                              </span>
+                              <span className="text-muted-foreground text-sm font-medium">/ شهر</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
+                  </Link>
+                );
+              })}
+              </div>
+            </>
+          ) : properties && properties.length > 0 ? (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Search className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground text-lg mb-4">لم يتم العثور على عقارات مطابقة</p>
+              <Button variant="outline" onClick={clearFilters}>
+                مسح الفلاتر
+              </Button>
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                <Home className="w-10 h-10 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground text-lg">{t('property.noProperties')}</p>
+            </div>
+          )}
+        </div>
       </div>
     </ProtectedRoute>
   );
