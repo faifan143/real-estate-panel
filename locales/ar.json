@@ -113,7 +113,16 @@
       "active": "نشط",
       "reserved": "محجوز",
       "closed": "مغلق"
-    }
+    },
+    "estimatePrice": "تقدير السعر (ذكاء اصطناعي)",
+    "estimatingPrice": "جاري التقدير...",
+    "estimationOnlyHouseApartment": "تقدير السعر متاح للشقة والمنزل فقط.",
+    "fillLocationAreaRooms": "أدخل النوع والموقع (مثلاً المدينة) والمساحة وعدد الغرف للتقدير.",
+    "estimatedPriceNote": "السعر المقدر (يمكنك تعديله)",
+    "aiEstimationUnavailable": "تقدير الذكاء الاصطناعي غير متاح مؤقتاً.",
+    "seeAiEstimate": "عرض تقدير السعر بالذكاء الاصطناعي",
+    "aiEstimatedPrice": "السعر المقدر (ذكاء اصطناعي)",
+    "getAiPriceEstimate": "الحصول على تقدير السعر"
   },
   "request": {
     "request": "طلب",

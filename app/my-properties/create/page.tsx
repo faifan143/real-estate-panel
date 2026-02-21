@@ -12,6 +12,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import { api } from '@/lib/axios';
+import { predictPrice } from '@/lib/price-prediction';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -59,10 +60,71 @@ export default function CreatePropertyPage() {
     handleSubmit,
     control,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<PropertyFormData>({
     resolver: yupResolver(propertySchema) as any,
   });
+
+  const [isEstimating, setIsEstimating] = useState(false);
+  const [estimationReasoning, setEstimationReasoning] = useState<string | null>(null);
+
+  const watchedType = watch('type');
+  const watchedAddress = watch('address');
+  const watchedArea = watch('area');
+  const watchedRooms = watch('rooms');
+  const canEstimate =
+    (watchedType === 'HOUSE' || watchedType === 'APARTMENT') &&
+    typeof watchedAddress === 'string' &&
+    watchedAddress.trim().length > 0 &&
+    typeof watchedArea === 'number' &&
+    !Number.isNaN(watchedArea) &&
+    watchedArea > 0 &&
+    typeof watchedRooms === 'number' &&
+    !Number.isNaN(watchedRooms) &&
+    watchedRooms >= 0;
+
+  const handleEstimatePrice = async () => {
+    if (!canEstimate) return;
+    const type = watch('type');
+    const location = (watch('address') || '').trim();
+    const area = watch('area');
+    const rooms = watch('rooms');
+    const floor = watch('floor');
+    const description = watch('description');
+    if (
+      (type !== 'HOUSE' && type !== 'APARTMENT') ||
+      !location ||
+      typeof area !== 'number' ||
+      Number.isNaN(area) ||
+      typeof rooms !== 'number' ||
+      Number.isNaN(rooms)
+    ) {
+      toast.error(t('property.fillLocationAreaRooms'));
+      return;
+    }
+    setIsEstimating(true);
+    setEstimationReasoning(null);
+    try {
+      const result = await predictPrice({
+        type,
+        location,
+        area,
+        rooms,
+        ...(typeof floor === 'number' && !Number.isNaN(floor) ? { floor } : {}),
+        ...(description ? { description } : {}),
+      });
+      setValue('price', result.estimatedPrice, { shouldValidate: true });
+      setEstimationReasoning(result.reasoning ?? null);
+      toast.success(t('property.estimatedPriceNote'));
+    } catch (err: any) {
+      const msg =
+        err.response?.data?.message || t('property.aiEstimationUnavailable');
+      toast.error(msg);
+    } finally {
+      setIsEstimating(false);
+    }
+  };
 
   const handleLocationChange = (lat: number, lng: number) => {
     setLatitude(lat);
@@ -134,13 +196,31 @@ export default function CreatePropertyPage() {
 
                 <div>
                   <Label htmlFor="price">{t('property.price')}</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    {...register('price', { valueAsNumber: true })}
-                  />
+                  <div className="flex gap-2 items-center flex-wrap">
+                    <Input
+                      id="price"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      className="flex-1 min-w-[120px]"
+                      {...register('price', { valueAsNumber: true })}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!canEstimate || isEstimating}
+                      onClick={handleEstimatePrice}
+                    >
+                      {isEstimating ? t('property.estimatingPrice') : t('property.estimatePrice')}
+                    </Button>
+                  </div>
+                  {(watchedType && watchedType !== 'HOUSE' && watchedType !== 'APARTMENT') && (
+                    <p className="text-xs text-amber-600 mt-1">{t('property.estimationOnlyHouseApartment')}</p>
+                  )}
+                  {estimationReasoning && (
+                    <p className="text-xs text-zinc-500 mt-2 italic">{estimationReasoning}</p>
+                  )}
                   {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
                 </div>
 

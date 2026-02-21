@@ -113,7 +113,16 @@
       "active": "Active",
       "reserved": "Reserved",
       "closed": "Closed"
-    }
+    },
+    "estimatePrice": "Estimate price (AI)",
+    "estimatingPrice": "Estimating...",
+    "estimationOnlyHouseApartment": "Price estimation is available for Apartment and House only.",
+    "fillLocationAreaRooms": "Fill type, location (e.g. city), area and rooms to estimate.",
+    "estimatedPriceNote": "Estimated price (you can edit)",
+    "aiEstimationUnavailable": "AI estimation is temporarily unavailable.",
+    "seeAiEstimate": "See AI price estimate",
+    "aiEstimatedPrice": "AI estimated price",
+    "getAiPriceEstimate": "Get AI price estimate"
   },
   "request": {
     "request": "Request",

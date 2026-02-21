@@ -4,6 +4,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { Navbar } from '@/components/navbar';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/axios';
+import { predictPrice } from '@/lib/price-prediction';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -66,6 +67,9 @@ export default function PropertyDetailPage() {
     imageId: string | null;
     fileName: string;
   }>({ open: false, imageId: null, fileName: '' });
+  const [estimateLoading, setEstimateLoading] = useState(false);
+  const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
+  const [estimationReasoning, setEstimationReasoning] = useState<string | null>(null);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', id],
@@ -188,6 +192,45 @@ export default function PropertyDetailPage() {
       CLOSED: t('property.statuses.closed'),
     };
     return statusMap[status] || status;
+  };
+
+  const canShowEstimate =
+    property &&
+    (property.type === 'HOUSE' || property.type === 'APARTMENT') &&
+    typeof property.address === 'string' &&
+    property.address.trim().length > 0 &&
+    typeof property.area === 'number' &&
+    !Number.isNaN(property.area) &&
+    property.area > 0 &&
+    typeof property.rooms === 'number' &&
+    !Number.isNaN(property.rooms) &&
+    property.rooms >= 0;
+
+  const handleGetAiEstimate = async () => {
+    if (!property || !canShowEstimate) return;
+    setEstimateLoading(true);
+    setEstimatedPrice(null);
+    setEstimationReasoning(null);
+    try {
+      const result = await predictPrice({
+        type: property.type as 'HOUSE' | 'APARTMENT',
+        location: property.address!.trim(),
+        area: property.area!,
+        rooms: property.rooms!,
+        ...(property.floor !== undefined && property.floor !== null && !Number.isNaN(property.floor)
+          ? { floor: property.floor }
+          : {}),
+        ...(property.description ? { description: property.description } : {}),
+        propertyId: parseInt(property.propertyId, 10),
+      });
+      setEstimatedPrice(result.estimatedPrice);
+      setEstimationReasoning(result.reasoning ?? null);
+    } catch (err: any) {
+      const msg = err.response?.data?.message || t('property.aiEstimationUnavailable');
+      toast.error(msg);
+    } finally {
+      setEstimateLoading(false);
+    }
   };
 
   return (
@@ -376,6 +419,38 @@ export default function PropertyDetailPage() {
                           </span>
                           <span className="text-muted-foreground">/ شهر</span>
                         </div>
+                      </div>
+                    )}
+
+                    {/* AI price estimate (for browse) */}
+                    {canShowEstimate && (
+                      <div className="space-y-2 pt-2 border-t">
+                        {estimatedPrice !== null ? (
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">
+                              {t('property.aiEstimatedPrice')}
+                            </p>
+                            <p className="text-2xl font-semibold text-foreground">
+                              ${estimatedPrice.toLocaleString()}
+                            </p>
+                            {estimationReasoning && (
+                              <p className="text-xs text-muted-foreground italic mt-1">
+                                {estimationReasoning}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            disabled={estimateLoading}
+                            onClick={handleGetAiEstimate}
+                          >
+                            {estimateLoading ? t('property.estimatingPrice') : t('property.getAiPriceEstimate')}
+                          </Button>
+                        )}
                       </div>
                     )}
 
