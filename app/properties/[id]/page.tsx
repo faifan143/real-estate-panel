@@ -68,8 +68,11 @@ export default function PropertyDetailPage() {
     fileName: string;
   }>({ open: false, imageId: null, fileName: '' });
   const [estimateLoading, setEstimateLoading] = useState(false);
-  const [estimatedPrice, setEstimatedPrice] = useState<number | null>(null);
-  const [estimationReasoning, setEstimationReasoning] = useState<string | null>(null);
+  const [estimateResult, setEstimateResult] = useState<{
+    buyPrice: number;
+    monthlyRent?: number;
+    reasoning?: string | null;
+  } | null>(null);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ['property', id],
@@ -209,8 +212,7 @@ export default function PropertyDetailPage() {
   const handleGetAiEstimate = async () => {
     if (!property || !canShowEstimate) return;
     setEstimateLoading(true);
-    setEstimatedPrice(null);
-    setEstimationReasoning(null);
+    setEstimateResult(null);
     try {
       const result = await predictPrice({
         type: property.type as 'HOUSE' | 'APARTMENT',
@@ -223,8 +225,12 @@ export default function PropertyDetailPage() {
         ...(property.description ? { description: property.description } : {}),
         propertyId: parseInt(property.propertyId, 10),
       });
-      setEstimatedPrice(result.estimatedPrice);
-      setEstimationReasoning(result.reasoning ?? null);
+      const buyPrice = result.estimatedBuyPrice ?? result.estimatedPrice;
+      setEstimateResult({
+        buyPrice,
+        monthlyRent: result.estimatedMonthlyRent,
+        reasoning: result.reasoning ?? null,
+      });
     } catch (err: any) {
       const msg = err.response?.data?.message || t('property.aiEstimationUnavailable');
       toast.error(msg);
@@ -425,17 +431,29 @@ export default function PropertyDetailPage() {
                     {/* AI price estimate (for browse) */}
                     {canShowEstimate && (
                       <div className="space-y-2 pt-2 border-t">
-                        {estimatedPrice !== null ? (
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium text-muted-foreground">
-                              {t('property.aiEstimatedPrice')}
-                            </p>
-                            <p className="text-2xl font-semibold text-foreground">
-                              ${estimatedPrice.toLocaleString()}
-                            </p>
-                            {estimationReasoning && (
+                        {estimateResult !== null ? (
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm font-medium text-muted-foreground">
+                                {t('property.estimatedBuyPrice')}
+                              </p>
+                              <p className="text-xl font-semibold text-foreground">
+                                ${estimateResult.buyPrice.toLocaleString()}
+                              </p>
+                            </div>
+                            {estimateResult.monthlyRent != null && (
+                              <div>
+                                <p className="text-sm font-medium text-muted-foreground">
+                                  {t('property.estimatedMonthlyRent')}
+                                </p>
+                                <p className="text-lg font-semibold text-foreground">
+                                  ${estimateResult.monthlyRent.toLocaleString()} / {t('property.perMonth')}
+                                </p>
+                              </div>
+                            )}
+                            {estimateResult.reasoning && (
                               <p className="text-xs text-muted-foreground italic mt-1">
-                                {estimationReasoning}
+                                {estimateResult.reasoning}
                               </p>
                             )}
                           </div>

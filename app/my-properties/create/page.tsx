@@ -68,6 +68,7 @@ export default function CreatePropertyPage() {
 
   const [isEstimating, setIsEstimating] = useState(false);
   const [estimationReasoning, setEstimationReasoning] = useState<string | null>(null);
+  const [estimationMonthlyRent, setEstimationMonthlyRent] = useState<number | null>(null);
 
   const watchedType = watch('type');
   const watchedAddress = watch('address');
@@ -105,6 +106,7 @@ export default function CreatePropertyPage() {
     }
     setIsEstimating(true);
     setEstimationReasoning(null);
+    setEstimationMonthlyRent(null);
     try {
       const result = await predictPrice({
         type,
@@ -116,6 +118,7 @@ export default function CreatePropertyPage() {
       });
       setValue('price', result.estimatedPrice, { shouldValidate: true });
       setEstimationReasoning(result.reasoning ?? null);
+      setEstimationMonthlyRent(result.estimatedMonthlyRent ?? null);
       toast.success(t('property.estimatedPriceNote'));
     } catch (err: any) {
       const msg =
@@ -220,6 +223,11 @@ export default function CreatePropertyPage() {
                   )}
                   {estimationReasoning && (
                     <p className="text-xs text-zinc-500 mt-2 italic">{estimationReasoning}</p>
+                  )}
+                  {estimationMonthlyRent != null && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('property.estimatedMonthlyRent')}: ${estimationMonthlyRent.toLocaleString()} / {t('property.perMonth')}
+                    </p>
                   )}
                   {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
                 </div>

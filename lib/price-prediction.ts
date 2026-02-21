@@ -14,8 +14,16 @@ export interface PredictPriceRequest {
 
 /** Response from POST /properties/predict-price */
 export interface PredictPriceResponse {
+  /** Purchase price (kept for backward compatibility; equals estimatedBuyPrice) */
   estimatedPrice: number;
+  /** Estimated total purchase price in USD */
+  estimatedBuyPrice?: number;
+  /** Estimated monthly rent in USD */
+  estimatedMonthlyRent?: number;
+  currency?: string;
+  confidence?: string;
   reasoning?: string;
+  visualAssessment?: string | null;
   source?: string;
 }
 

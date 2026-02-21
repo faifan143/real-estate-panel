@@ -122,7 +122,10 @@
     "aiEstimationUnavailable": "تقدير الذكاء الاصطناعي غير متاح مؤقتاً.",
     "seeAiEstimate": "عرض تقدير السعر بالذكاء الاصطناعي",
     "aiEstimatedPrice": "السعر المقدر (ذكاء اصطناعي)",
-    "getAiPriceEstimate": "الحصول على تقدير السعر"
+    "getAiPriceEstimate": "الحصول على تقدير السعر",
+    "estimatedBuyPrice": "تقدير سعر الشراء",
+    "estimatedMonthlyRent": "تقدير الإيجار الشهري",
+    "perMonth": "شهر"
   },
   "request": {
     "request": "طلب",

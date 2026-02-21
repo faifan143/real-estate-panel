@@ -122,7 +122,10 @@
     "aiEstimationUnavailable": "AI estimation is temporarily unavailable.",
     "seeAiEstimate": "See AI price estimate",
     "aiEstimatedPrice": "AI estimated price",
-    "getAiPriceEstimate": "Get AI price estimate"
+    "getAiPriceEstimate": "Get AI price estimate",
+    "estimatedBuyPrice": "Estimated buy price",
+    "estimatedMonthlyRent": "Estimated monthly rent",
+    "perMonth": "month"
   },
   "request": {
     "request": "Request",
