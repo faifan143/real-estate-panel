@@ -71,7 +71,6 @@ export default function PropertyDetailPage() {
   const [estimateResult, setEstimateResult] = useState<{
     buyPrice: number;
     monthlyRent?: number;
-    reasoning?: string | null;
   } | null>(null);
 
   const { data: property, isLoading } = useQuery({
@@ -229,7 +228,6 @@ export default function PropertyDetailPage() {
       setEstimateResult({
         buyPrice,
         monthlyRent: result.estimatedMonthlyRent,
-        reasoning: result.reasoning ?? null,
       });
     } catch (err: any) {
       const msg = err.response?.data?.message || t('property.aiEstimationUnavailable');
@@ -450,11 +448,6 @@ export default function PropertyDetailPage() {
                                   ${estimateResult.monthlyRent.toLocaleString()} / {t('property.perMonth')}
                                 </p>
                               </div>
-                            )}
-                            {estimateResult.reasoning && (
-                              <p className="text-xs text-muted-foreground italic mt-1">
-                                {estimateResult.reasoning}
-                              </p>
                             )}
                           </div>
                         ) : (

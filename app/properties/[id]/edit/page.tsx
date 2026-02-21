@@ -94,7 +94,6 @@ export default function EditPropertyPage() {
   });
 
   const [isEstimating, setIsEstimating] = useState(false);
-  const [estimationReasoning, setEstimationReasoning] = useState<string | null>(null);
   const [estimationMonthlyRent, setEstimationMonthlyRent] = useState<number | null>(null);
 
   const {
@@ -201,7 +200,6 @@ export default function EditPropertyPage() {
       return;
     }
     setIsEstimating(true);
-    setEstimationReasoning(null);
     setEstimationMonthlyRent(null);
     try {
       const result = await predictPrice({
@@ -214,7 +212,6 @@ export default function EditPropertyPage() {
         ...(id ? { propertyId: parseInt(id, 10) } : {}),
       });
       setValue('price', result.estimatedPrice, { shouldValidate: true });
-      setEstimationReasoning(result.reasoning ?? null);
       setEstimationMonthlyRent(result.estimatedMonthlyRent ?? null);
       toast.success(t('property.estimatedPriceNote'));
     } catch (err: any) {
@@ -341,9 +338,6 @@ export default function EditPropertyPage() {
                   </div>
                   {watchedType && watchedType !== 'HOUSE' && watchedType !== 'APARTMENT' && (
                     <p className="text-xs text-amber-600 mt-1">{t('property.estimationOnlyHouseApartment')}</p>
-                  )}
-                  {estimationReasoning && (
-                    <p className="text-xs text-zinc-500 mt-2 italic">{estimationReasoning}</p>
                   )}
                   {estimationMonthlyRent != null && (
                     <p className="text-xs text-muted-foreground mt-1">
