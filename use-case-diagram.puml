@@ -1,0 +1,104 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam usecase {
+  BackgroundColor WhiteSmoke
+  BorderColor DarkSlateGray
+  ArrowColor DarkSlateGray
+}
+
+actor Guest
+actor User
+actor Admin
+
+User --|> Guest
+
+' ─────────────────────────────────────────
+rectangle "Authentication" {
+  (Register)
+  (Login)
+  (Update Profile)
+}
+
+rectangle "Property Browsing" {
+  (Browse Properties)
+  (View Property Details)
+}
+
+rectangle "Property Management" {
+  (Create Property)
+  (Edit Property)
+  (Delete Property)
+  (Upload / Delete Images)
+}
+
+rectangle "Request Management" {
+  (Submit Buy / Rent Request)
+  (View My Requests)
+  (View All Requests)
+  (Approve Request)
+  (Reject Request)
+}
+
+rectangle "Meeting Management" {
+  (View My Meetings)
+  (View All Meetings)
+  (Schedule Meeting)
+  (Complete Meeting)
+  (Cancel Meeting)
+}
+
+' ─────────────────────────────────────────
+' Guest
+Guest --> (Register)
+Guest --> (Login)
+
+' User
+User --> (Update Profile)
+User --> (Browse Properties)
+User --> (View Property Details)
+User --> (Create Property)
+User --> (Edit Property)
+User --> (Delete Property)
+User --> (Upload / Delete Images)
+User --> (Submit Buy / Rent Request)
+User --> (View My Requests)
+User --> (View My Meetings)
+
+' Admin
+Admin --> (Login)
+Admin --> (Update Profile)
+Admin --> (Browse Properties)
+Admin --> (View Property Details)
+Admin --> (Upload / Delete Images)
+Admin --> (View All Requests)
+Admin --> (Approve Request)
+Admin --> (Reject Request)
+Admin --> (View All Meetings)
+Admin --> (Schedule Meeting)
+Admin --> (Complete Meeting)
+Admin --> (Cancel Meeting)
+
+' ─────────────────────────────────────────
+' Relationships
+(Approve Request) .> (Schedule Meeting) : <<include>>
+
+note bottom of (Edit Property)
+  User: own properties only
+end note
+
+note bottom of (Delete Property)
+  User: own ACTIVE properties only
+end note
+
+note bottom of (Upload / Delete Images)
+  User: own properties only
+  Admin: any property
+end note
+
+note bottom of (Schedule Meeting)
+  Automatically triggered
+  when a request is approved
+end note
+@enduml

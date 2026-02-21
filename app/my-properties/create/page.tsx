@@ -144,20 +144,6 @@ export default function CreatePropertyPage() {
                   {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
                 </div>
 
-                <div>
-                  <Label>{t('property.propertyLocationOnMap')}</Label>
-                  <DynamicMapPicker
-                    key={`map-picker-create-${mapKey}`}
-                    mapKey={`create-${mapKey}`}
-                    latitude={latitude}
-                    longitude={longitude}
-                    onLocationChange={handleLocationChange}
-                  />
-                  <p className="text-xs text-zinc-500 mt-2">
-                    {t('property.clickMapToSetLocation')}
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="area">{t('property.areaSqFt')}</Label>
@@ -188,6 +174,20 @@ export default function CreatePropertyPage() {
                     />
                     {errors.floor && <p className="text-sm text-red-500 mt-1">{errors.floor.message}</p>}
                   </div>
+                </div>
+
+                <div>
+                  <Label>{t('property.propertyLocationOnMap')}</Label>
+                  <DynamicMapPicker
+                    key={`map-picker-create-${mapKey}`}
+                    mapKey={`create-${mapKey}`}
+                    latitude={latitude}
+                    longitude={longitude}
+                    onLocationChange={handleLocationChange}
+                  />
+                  <p className="text-xs text-zinc-500 mt-2">
+                    {t('property.clickMapToSetLocation')}
+                  </p>
                 </div>
 
                 <div className="flex gap-3 pt-4">

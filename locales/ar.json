@@ -16,7 +16,12 @@
     "confirm": "تأكيد",
     "yes": "نعم",
     "no": "لا",
-    "optional": "اختياري"
+    "optional": "اختياري",
+    "all": "الكل",
+    "clearFilters": "مسح الفلاتر",
+    "filter": "تصفية",
+    "activeFilters": "التصفية النشطة",
+    "clearAll": "مسح الكل"
   },
   "auth": {
     "login": "تسجيل الدخول",
@@ -40,15 +45,17 @@
     "myProperties": "عقاراتي",
     "myRequests": "طلباتي",
     "myMeetings": "اجتماعاتي",
-    "adminRequests": "طلبات الإدارة",
+    "adminRequests": "الطلبات",
+    "adminMeetings": "الاجتماعات",
     "profile": "الملف الشخصي"
   },
   "property": {
-    "title": "العنوان",
+    "title": "الأسم",
     "type": "النوع",
     "address": "العنوان",
     "description": "الوصف",
     "price": "السعر",
+    "currency": "ل.س",
     "location": "الموقع",
     "area": "المساحة",
     "rooms": "الغرف",
@@ -123,6 +130,8 @@
     "loadingRequestDetails": "جاري تحميل تفاصيل الطلب...",
     "requestNotFound": "لم يتم العثور على الطلب.",
     "createdAt": "تاريخ الإنشاء",
+    "allTypes": "جميع الأنواع",
+    "status": "الحالة",
     "types": {
       "buy": "شراء",
       "rent": "إيجار"
@@ -151,6 +160,18 @@
     "loadingMeetings": "جاري تحميل اجتماعاتك...",
     "loadingMeetingDetails": "جاري تحميل تفاصيل الاجتماع...",
     "meetingNotFound": "لم يتم العثور على الاجتماع.",
+    "completeMeeting": "إتمام الاجتماع",
+    "cancelMeeting": "إلغاء الاجتماع",
+    "completing": "جاري الإتمام...",
+    "cancelling": "جاري الإلغاء...",
+    "meetingCompleted": "تم إتمام الاجتماع بنجاح. تم بيع العقار.",
+    "meetingCancelled": "تم إلغاء الاجتماع. العقار متاح الآن مرة أخرى.",
+    "completeFailed": "فشل إتمام الاجتماع",
+    "cancelFailed": "فشل إلغاء الاجتماع",
+    "completeConfirmation": "هل أنت متأكد من إتمام هذا الاجتماع؟ سيؤدي هذا إلى إنهاء عملية البيع وإزالة العقار من النظام.",
+    "cancelConfirmation": "هل أنت متأكد من إلغاء هذا الاجتماع؟ سيصبح العقار متاحًا لطلبات جديدة.",
+    "status": "الحالة",
+    "viewDetails": "عرض التفاصيل",
     "statuses": {
       "scheduled": "مجدول",
       "completed": "مكتمل",
@@ -159,6 +180,7 @@
   },
   "admin": {
     "adminRequests": "الإدارة - الطلبات المعلقة",
+    "adminMeetings": "الإدارة - الاجتماعات",
     "pendingRequests": "الطلبات المعلقة",
     "approveRequest": "الموافقة على الطلب",
     "rejectRequest": "رفض الطلب",
@@ -182,7 +204,12 @@
     "approvalFailed": "فشلت الموافقة",
     "rejectionFailed": "فشل الرفض",
     "pleaseSelectLocation": "يرجى اختيار موقع على الخريطة",
-    "rejectDescription": "يمكنك اختيارياً تقديم سبب لرفض هذا الطلب"
+    "rejectDescription": "يمكنك اختيارياً تقديم سبب لرفض هذا الطلب",
+    "searchRequests": "البحث في الطلبات...",
+    "searchMeetings": "البحث في الاجتماعات...",
+    "noRequestsMatchFilters": "لا توجد طلبات تطابق الفلاتر.",
+    "noMeetingsMatchFilters": "لا توجد اجتماعات تطابق الفلاتر.",
+    "noMeetings": "لا توجد اجتماعات في الوقت الحالي."
   },
   "map": {
     "loadingMap": "جاري تحميل الخريطة...",
@@ -212,4 +239,3 @@
     "updateSuccess": "تم تحديث الملف الشخصي بنجاح"
   }
 }
-

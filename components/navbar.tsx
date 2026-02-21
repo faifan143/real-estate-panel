@@ -74,25 +74,38 @@ export function Navbar() {
             {role === 'ADMIN' ? (
               <>
                 <Link href="/admin/requests">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className={`font-medium transition-colors ${
-                      isActive('/admin/requests') 
-                        ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary' 
+                      isActive('/admin/requests')
+                        ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary'
                         : ''
                     }`}
                   >
                     {t('nav.adminRequests')}
                   </Button>
                 </Link>
-                <Link href="/properties">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                <Link href="/admin/meetings">
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className={`font-medium transition-colors ${
-                      isActive('/properties') 
-                        ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary' 
+                      isActive('/admin/meetings')
+                        ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary'
+                        : ''
+                    }`}
+                  >
+                    {t('nav.adminMeetings')}
+                  </Button>
+                </Link>
+                <Link href="/properties">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`font-medium transition-colors ${
+                      isActive('/properties')
+                        ? 'bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary'
                         : ''
                     }`}
                   >
@@ -261,7 +274,7 @@ export function Navbar() {
           <div className="container mx-auto px-6 py-4 space-y-2">
             {role === 'ADMIN' ? (
               <>
-                <Link 
+                <Link
                   href="/admin/requests"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
@@ -272,7 +285,18 @@ export function Navbar() {
                 >
                   {t('nav.adminRequests')}
                 </Link>
-                <Link 
+                <Link
+                  href="/admin/meetings"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={`block px-4 py-3 rounded-xl font-medium transition-colors ${
+                    isActive('/admin/meetings')
+                      ? 'bg-primary/10 text-primary'
+                      : 'hover:bg-muted/50'
+                  }`}
+                >
+                  {t('nav.adminMeetings')}
+                </Link>
+                <Link
                   href="/properties"
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={`block px-4 py-3 rounded-xl font-medium transition-colors ${

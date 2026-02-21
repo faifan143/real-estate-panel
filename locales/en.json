@@ -16,7 +16,12 @@
     "confirm": "Confirm",
     "yes": "Yes",
     "no": "No",
-    "optional": "Optional"
+    "optional": "Optional",
+    "all": "All",
+    "clearFilters": "Clear Filters",
+    "filter": "Filter",
+    "activeFilters": "Active Filters",
+    "clearAll": "Clear All"
   },
   "auth": {
     "login": "Login",
@@ -40,7 +45,8 @@
     "myProperties": "My Properties",
     "myRequests": "My Requests",
     "myMeetings": "My Meetings",
-    "adminRequests": "Admin Requests",
+    "adminRequests": "Requests",
+    "adminMeetings": "Meetings",
     "profile": "Profile"
   },
   "property": {
@@ -49,6 +55,7 @@
     "address": "Address",
     "description": "Description",
     "price": "Price",
+    "currency": "SYP",
     "location": "Location",
     "area": "Area",
     "rooms": "Rooms",
@@ -123,6 +130,8 @@
     "loadingRequestDetails": "Loading request details...",
     "requestNotFound": "Request not found.",
     "createdAt": "Created At",
+    "allTypes": "All Types",
+    "status": "Status",
     "types": {
       "buy": "Buy",
       "rent": "Rent"
@@ -151,6 +160,18 @@
     "loadingMeetings": "Loading your meetings...",
     "loadingMeetingDetails": "Loading meeting details...",
     "meetingNotFound": "Meeting not found.",
+    "completeMeeting": "Complete Meeting",
+    "cancelMeeting": "Cancel Meeting",
+    "completing": "Completing...",
+    "cancelling": "Cancelling...",
+    "meetingCompleted": "Meeting completed successfully. Property has been sold.",
+    "meetingCancelled": "Meeting cancelled. Property is now available again.",
+    "completeFailed": "Failed to complete meeting",
+    "cancelFailed": "Failed to cancel meeting",
+    "completeConfirmation": "Are you sure you want to mark this meeting as completed? This will finalize the sale and remove the property from the system.",
+    "cancelConfirmation": "Are you sure you want to cancel this meeting? The property will become available for new requests.",
+    "status": "Status",
+    "viewDetails": "View Details",
     "statuses": {
       "scheduled": "Scheduled",
       "completed": "Completed",
@@ -159,6 +180,7 @@
   },
   "admin": {
     "adminRequests": "Admin - Pending Requests",
+    "adminMeetings": "Admin - Meetings",
     "pendingRequests": "Pending Requests",
     "approveRequest": "Approve Request",
     "rejectRequest": "Reject Request",
@@ -182,7 +204,12 @@
     "approvalFailed": "Approval failed",
     "rejectionFailed": "Rejection failed",
     "pleaseSelectLocation": "Please select a location on the map",
-    "rejectDescription": "Optionally provide a reason for rejecting this request"
+    "rejectDescription": "Optionally provide a reason for rejecting this request",
+    "searchRequests": "Search requests...",
+    "searchMeetings": "Search meetings...",
+    "noRequestsMatchFilters": "No requests match your filters.",
+    "noMeetingsMatchFilters": "No meetings match your filters.",
+    "noMeetings": "No meetings at the moment."
   },
   "map": {
     "loadingMap": "Loading map...",

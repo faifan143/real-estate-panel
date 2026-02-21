@@ -264,20 +264,6 @@ export default function EditPropertyPage() {
                   {errors.price && <p className="text-sm text-red-500 mt-1">{errors.price.message}</p>}
                 </div>
 
-                <div>
-                  <Label>Property Location on Map</Label>
-                  <DynamicMapPicker
-                    key={`map-picker-${id}-${mapKey}`}
-                    mapKey={`${id}-${mapKey}`}
-                    latitude={latitude}
-                    longitude={longitude}
-                    onLocationChange={handleLocationChange}
-                  />
-                  <p className="text-xs text-zinc-500 mt-2">
-                    Click on the map to set the property location
-                  </p>
-                </div>
-
                 <div className="grid grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="area">Area (sq ft)</Label>
@@ -317,8 +303,8 @@ export default function EditPropertyPage() {
                       name="status"
                       control={control}
                       render={({ field }) => (
-                        <Select 
-                          onValueChange={field.onChange} 
+                        <Select
+                          onValueChange={field.onChange}
                           value={field.value || property.status || undefined}
                         >
                           <SelectTrigger>
@@ -334,6 +320,20 @@ export default function EditPropertyPage() {
                     />
                   </div>
                 )}
+
+                <div>
+                  <Label>Property Location on Map</Label>
+                  <DynamicMapPicker
+                    key={`map-picker-${id}-${mapKey}`}
+                    mapKey={`${id}-${mapKey}`}
+                    latitude={latitude}
+                    longitude={longitude}
+                    onLocationChange={handleLocationChange}
+                  />
+                  <p className="text-xs text-zinc-500 mt-2">
+                    Click on the map to set the property location
+                  </p>
+                </div>
 
                 <div className="flex gap-3 pt-4">
                   <Button type="submit" disabled={isSubmitting}>
