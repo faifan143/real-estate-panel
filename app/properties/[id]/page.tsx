@@ -61,6 +61,9 @@ interface PropertyDetail {
   rooms?: number;
   floor?: number;
   status: string;
+  listingType?: string;
+  salePrice?: number;
+  rentPrice?: number;
   createdAt?: string;
   updatedAt?: string;
   images: PropertyImage[];
@@ -372,21 +375,56 @@ export default function PropertyDetailPage() {
               <div className="lg:col-span-1">
                 <Card className="sticky top-24 p-6 shadow-xl border-2">
                   <div className="space-y-6">
-                    {/* Price */}
-                    {property.price !== undefined &&
-                      property.price !== null && (
-                        <div>
-                          <div className="flex items-baseline gap-2">
-                            <span className="text-3xl font-semibold text-foreground">
-                              ${property.price.toLocaleString()}
-                            </span>
-                            <span className="text-muted-foreground">/ شهر</span>
-                          </div>
-                        </div>
-                      )}
+                    {/* Price Section */}
+                    {property.listingType && (
+                      <div className="space-y-4">
+                        {(property.listingType === "RENT" ||
+                          property.listingType === "BOTH") &&
+                          property.rentPrice != null && (
+                            <div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-semibold text-foreground">
+                                  ${property.rentPrice.toLocaleString()}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  / {t("property.perMonth")}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                        {(property.listingType === "SALE" ||
+                          property.listingType === "BOTH") &&
+                          property.salePrice != null && (
+                            <div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-semibold text-foreground">
+                                  ${property.salePrice.toLocaleString()}
+                                </span>
+                                <span className="text-muted-foreground">
+                                  {t("property.listingTypes.sale")}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                        {/* Fallback for legacy price if listingType is not yet migrated properly */}
+                        {!property.salePrice &&
+                          !property.rentPrice &&
+                          property.price != null && (
+                            <div>
+                              <div className="flex items-baseline gap-2">
+                                <span className="text-3xl font-semibold text-foreground">
+                                  ${property.price.toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          )}
+                      </div>
+                    )}
 
                     {/* AI price estimate (for browse) */}
-                    {canShowEstimate && (
+                    {canShowEstimate ? (
                       <div className="space-y-2 pt-2 border-t">
                         {estimateResult !== null ? (
                           <div className="space-y-2">
@@ -425,10 +463,38 @@ export default function PropertyDetailPage() {
                           </Button>
                         )}
                       </div>
+                    ) : (
+                      property &&
+                      property.type !== "HOUSE" &&
+                      property.type !== "APARTMENT" && (
+                        <div className="pt-2 border-t">
+                          <p className="text-xs text-amber-600">
+                            {t("property.estimationOnlyHouseApartment")}
+                          </p>
+                        </div>
+                      )
                     )}
 
                     {/* Request Buttons */}
-                    {canCreateRequest && (
+                    {canCreateRequest && property.listingType && (
+                      <div className="space-y-3 pt-4 border-t">
+                        {(property.listingType === "SALE" ||
+                          property.listingType === "BOTH") && (
+                          <CreateRequestButton propertyId={id} type="BUY" />
+                        )}
+                        {(property.listingType === "RENT" ||
+                          property.listingType === "BOTH") && (
+                          <CreateRequestButton
+                            propertyId={id}
+                            type="RENT"
+                            variant="outline"
+                          />
+                        )}
+                      </div>
+                    )}
+
+                    {/* Fallback Request Buttons if listingType is missing */}
+                    {canCreateRequest && !property.listingType && (
                       <div className="space-y-3 pt-4 border-t">
                         <CreateRequestButton propertyId={id} type="BUY" />
                         <CreateRequestButton

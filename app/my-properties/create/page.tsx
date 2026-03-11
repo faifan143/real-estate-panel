@@ -55,11 +55,24 @@ const propertySchema = yup.object({
   type: yup.string().required("Type is required"),
   address: yup.string().optional(),
   description: yup.string().optional(),
-  price: yup
+  price: yup.number().optional().nullable(),
+  listingType: yup.string().required("Listing type is required"),
+  salePrice: yup
     .number()
-    .min(100, "Price must be at least 100")
-    .optional()
-    .nullable(),
+    .min(100, "Sale price must be at least 100")
+    .when("listingType", {
+      is: (val: string) => val === "SALE" || val === "BOTH",
+      then: (schema) => schema.required("Sale price is required"),
+      otherwise: (schema) => schema.optional().nullable(),
+    }),
+  rentPrice: yup
+    .number()
+    .min(10, "Rent price must be at least 10")
+    .when("listingType", {
+      is: (val: string) => val === "RENT" || val === "BOTH",
+      then: (schema) => schema.required("Rent price is required"),
+      otherwise: (schema) => schema.optional().nullable(),
+    }),
   latitude: yup.number().optional().nullable(),
   longitude: yup.number().optional().nullable(),
   area: yup
@@ -152,9 +165,23 @@ export default function CreatePropertyPage() {
         ...(typeof floor === "number" && !Number.isNaN(floor) ? { floor } : {}),
         ...(description ? { description } : {}),
       });
-      setValue("price", result.estimatedPrice, { shouldValidate: true });
-      setEstimationBuyPrice(result.estimatedPrice);
-      setEstimationMonthlyRent(result.estimatedMonthlyRent ?? null);
+
+      const listingType = watch("listingType");
+
+      if (listingType === "SALE" || listingType === "BOTH") {
+        setValue("salePrice", result.estimatedPrice, { shouldValidate: true });
+        setValue("price", result.estimatedPrice, { shouldValidate: true });
+        setEstimationBuyPrice(result.estimatedPrice);
+      }
+
+      if (listingType === "RENT" || listingType === "BOTH") {
+        const rent = result.estimatedMonthlyRent ?? null;
+        if (rent) {
+          setValue("rentPrice", rent, { shouldValidate: true });
+          setEstimationMonthlyRent(rent);
+        }
+      }
+
       toast.success(t("property.estimatedPriceNote"));
     } catch (err: any) {
       const msg =
@@ -239,6 +266,44 @@ export default function CreatePropertyPage() {
                     </div>
 
                     <div>
+                      <Label htmlFor="listingType" className="mb-2 block">
+                        {t("property.listingType")} *
+                      </Label>
+                      <Controller
+                        name="listingType"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue
+                                placeholder={t("property.selectType")}
+                              />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="SALE">
+                                {t("property.listingTypes.sale")}
+                              </SelectItem>
+                              <SelectItem value="RENT">
+                                {t("property.listingTypes.rent")}
+                              </SelectItem>
+                              <SelectItem value="BOTH">
+                                {t("property.listingTypes.both")}
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                      {errors.listingType && (
+                        <p className="text-sm text-red-500 mt-1">
+                          {errors.listingType.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
                       <Label htmlFor="type" className="mb-2 block">
                         {t("property.type")} *
                       </Label>
@@ -290,60 +355,104 @@ export default function CreatePropertyPage() {
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="price" className="mb-2 block">
-                        {t("property.price")}
-                      </Label>
-                      <div className="flex gap-2 items-center flex-wrap">
-                        <Input
-                          id="price"
-                          type="number"
-                          step="100"
-                          min="100"
-                          className="flex-1 min-w-[120px] h-11"
-                          {...register("price", { valueAsNumber: true })}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-11 px-4"
-                          disabled={!canEstimate || isEstimating}
-                          onClick={handleEstimatePrice}
-                        >
-                          {isEstimating ? (
-                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          ) : null}
-                          {isEstimating
-                            ? t("property.estimatingPrice")
-                            : t("property.estimatePrice")}
-                        </Button>
-                      </div>
-                      {watchedType &&
-                        watchedType !== "HOUSE" &&
-                        watchedType !== "APARTMENT" && (
-                          <p className="text-xs text-amber-600 mt-1">
-                            {t("property.estimationOnlyHouseApartment")}
-                          </p>
+                    <div className="space-y-4">
+                      {/* Price Section */}
+                      <div className="flex flex-col gap-4">
+                        {(watch("listingType") === "SALE" ||
+                          watch("listingType") === "BOTH") && (
+                          <div>
+                            <Label htmlFor="salePrice" className="mb-2 block">
+                              {t("property.salePrice")} *
+                            </Label>
+                            <Input
+                              id="salePrice"
+                              type="number"
+                              step="1000"
+                              min="100"
+                              className="h-11"
+                              {...register("salePrice", {
+                                valueAsNumber: true,
+                              })}
+                            />
+                            {errors.salePrice && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.salePrice.message}
+                              </p>
+                            )}
+                          </div>
                         )}
-                      {estimationBuyPrice != null && (
-                        <p className="text-xs text-primary/80 font-medium mt-1">
-                          {t("property.estimatedBuyPrice")}: $
-                          {estimationBuyPrice.toLocaleString()}
-                        </p>
-                      )}
-                      {estimationMonthlyRent != null && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t("property.estimatedMonthlyRent")}: $
-                          {estimationMonthlyRent.toLocaleString()} /{" "}
-                          {t("property.perMonth")}
-                        </p>
-                      )}
-                      {errors.price && (
-                        <p className="text-sm text-red-500 mt-1">
-                          {errors.price.message}
-                        </p>
-                      )}
+
+                        {(watch("listingType") === "RENT" ||
+                          watch("listingType") === "BOTH") && (
+                          <div>
+                            <Label htmlFor="rentPrice" className="mb-2 block">
+                              {t("property.rentPrice")} *
+                            </Label>
+                            <div className="flex gap-2 items-center">
+                              <Input
+                                id="rentPrice"
+                                type="number"
+                                step="100"
+                                min="10"
+                                className="flex-1 h-11"
+                                {...register("rentPrice", {
+                                  valueAsNumber: true,
+                                })}
+                              />
+                              <span className="text-muted-foreground whitespace-nowrap">
+                                / {t("property.perMonth")}
+                              </span>
+                            </div>
+                            {errors.rentPrice && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.rentPrice.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* AI Estimate Button */}
+                        <div className="pt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full h-11"
+                            disabled={!canEstimate || isEstimating}
+                            onClick={handleEstimatePrice}
+                          >
+                            {isEstimating ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : null}
+                            {isEstimating
+                              ? t("property.estimatingPrice")
+                              : t("property.estimatePrice")}
+                          </Button>
+                          {watchedType &&
+                            watchedType !== "HOUSE" &&
+                            watchedType !== "APARTMENT" && (
+                              <p className="text-xs text-amber-600 mt-1">
+                                {t("property.estimationOnlyHouseApartment")}
+                              </p>
+                            )}
+                          {estimationBuyPrice != null &&
+                            (watch("listingType") === "SALE" ||
+                              watch("listingType") === "BOTH") && (
+                              <p className="text-xs text-primary/80 font-medium mt-1">
+                                {t("property.estimatedBuyPrice")}: $
+                                {estimationBuyPrice.toLocaleString()}
+                              </p>
+                            )}
+                          {estimationMonthlyRent != null &&
+                            (watch("listingType") === "RENT" ||
+                              watch("listingType") === "BOTH") && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {t("property.estimatedMonthlyRent")}: $
+                                {estimationMonthlyRent.toLocaleString()} /{" "}
+                                {t("property.perMonth")}
+                              </p>
+                            )}
+                        </div>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">

@@ -61,12 +61,13 @@
     "rooms": "الغرف",
     "floor": "الطابق",
     "status": "الحالة",
+    "listingType": "نوع العرض",
     "images": "الصور",
     "createProperty": "إنشاء عقار",
     "editProperty": "تعديل العقار",
+    "updatePropertyDetails": "تحديث تفاصيل العقار",
     "propertyDetails": "تفاصيل العقار",
     "addNewProperty": "أضف عقاراً جديداً إلى محفظتك",
-    "updatePropertyDetails": "تحديث تفاصيل العقار",
     "noProperties": "لم يتم العثور على عقارات.",
     "noImages": "لم يتم رفع أي صور بعد.",
     "uploadImage": "رفع صورة",
@@ -115,6 +116,13 @@
       "reserved": "محجوز",
       "closed": "مغلق"
     },
+    "listingTypes": {
+      "sale": "بيع",
+      "rent": "إيجار",
+      "both": "بيع وإيجار"
+    },
+    "salePrice": "سعر البيع",
+    "rentPrice": "سعر الإيجار",
     "estimatePrice": "تقدير السعر (ذكاء اصطناعي)",
     "estimatingPrice": "جاري التقدير...",
     "estimationOnlyHouseApartment": "تقدير السعر متاح للشقة والمنزل فقط.",

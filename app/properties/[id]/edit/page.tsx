@@ -57,11 +57,24 @@ const propertySchema = yup.object({
   type: yup.string().required("Type is required"),
   address: yup.string().optional(),
   description: yup.string().optional(),
-  price: yup
+  price: yup.number().optional().nullable(),
+  listingType: yup.string().required("Listing type is required"),
+  salePrice: yup
     .number()
-    .min(100, "Price must be at least 100")
-    .optional()
-    .nullable(),
+    .min(100, "Sale price must be at least 100")
+    .when("listingType", {
+      is: (val: string) => val === "SALE" || val === "BOTH",
+      then: (schema) => schema.required("Sale price is required"),
+      otherwise: (schema) => schema.optional().nullable(),
+    }),
+  rentPrice: yup
+    .number()
+    .min(10, "Rent price must be at least 10")
+    .when("listingType", {
+      is: (val: string) => val === "RENT" || val === "BOTH",
+      then: (schema) => schema.required("Rent price is required"),
+      otherwise: (schema) => schema.optional().nullable(),
+    }),
   latitude: yup.number().optional().nullable(),
   longitude: yup.number().optional().nullable(),
   area: yup
@@ -96,6 +109,9 @@ interface PropertyDetail {
   rooms?: number;
   floor?: number;
   status: string;
+  listingType?: string;
+  salePrice?: number;
+  rentPrice?: number;
   createdAt?: string;
   updatedAt?: string;
   images?: Array<{
@@ -149,6 +165,9 @@ export default function EditPropertyPage() {
       address: "",
       description: "",
       price: undefined,
+      listingType: "",
+      salePrice: undefined,
+      rentPrice: undefined,
       latitude: null,
       longitude: null,
       area: undefined,
@@ -173,6 +192,9 @@ export default function EditPropertyPage() {
         address: property.address || "",
         description: property.description || "",
         price: property.price ?? undefined,
+        listingType: property.listingType || "",
+        salePrice: property.salePrice ?? undefined,
+        rentPrice: property.rentPrice ?? undefined,
         latitude: lat,
         longitude: lng,
         area: property.area ?? undefined,
@@ -187,6 +209,11 @@ export default function EditPropertyPage() {
       setTimeout(() => {
         if (property.type) {
           setValue("type", property.type, { shouldValidate: false });
+        }
+        if (property.listingType) {
+          setValue("listingType", property.listingType, {
+            shouldValidate: false,
+          });
         }
         if (property.status) {
           setValue("status", property.status, { shouldValidate: false });
@@ -248,11 +275,24 @@ export default function EditPropertyPage() {
         ...(description ? { description } : {}),
         ...(id ? { propertyId: parseInt(id, 10) } : {}),
       });
-      setEstimationBuyPrice(result.estimatedBuyPrice ?? result.estimatedPrice);
-      setValue("price", result.estimatedBuyPrice ?? result.estimatedPrice, {
-        shouldValidate: true,
-      });
-      setEstimationMonthlyRent(result.estimatedMonthlyRent ?? null);
+
+      const listingType = watch("listingType");
+
+      if (listingType === "SALE" || listingType === "BOTH") {
+        const sale = result.estimatedBuyPrice ?? result.estimatedPrice;
+        setValue("salePrice", sale, { shouldValidate: true });
+        setValue("price", sale, { shouldValidate: true });
+        setEstimationBuyPrice(sale);
+      }
+
+      if (listingType === "RENT" || listingType === "BOTH") {
+        const rent = result.estimatedMonthlyRent ?? null;
+        if (rent) {
+          setValue("rentPrice", rent, { shouldValidate: true });
+          setEstimationMonthlyRent(rent);
+        }
+      }
+
       toast.success(t("property.estimatedPriceNote"));
     } catch (err: any) {
       const msg =
@@ -329,8 +369,10 @@ export default function EditPropertyPage() {
         <div className="max-w-6xl mx-auto">
           <Card className="border-none shadow-none md:border md:shadow-sm">
             <CardHeader>
-              <CardTitle>Edit Property</CardTitle>
-              <CardDescription>Update property details</CardDescription>
+              <CardTitle>{t("property.editProperty")}</CardTitle>
+              <CardDescription>
+                {t("property.updatePropertyDetails")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form
@@ -343,7 +385,7 @@ export default function EditPropertyPage() {
                   <div className="space-y-4">
                     <div>
                       <Label htmlFor="title" className="mb-2 block">
-                        Title *
+                        {t("property.title")} *
                       </Label>
                       <Input
                         id="title"
@@ -359,8 +401,50 @@ export default function EditPropertyPage() {
 
                     {property && (
                       <div>
+                        <Label htmlFor="listingType" className="mb-2 block">
+                          {t("property.listingType")} *
+                        </Label>
+                        <Controller
+                          name="listingType"
+                          control={control}
+                          render={({ field }) => (
+                            <Select
+                              onValueChange={field.onChange}
+                              value={
+                                field.value || property.listingType || undefined
+                              }
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue
+                                  placeholder={t("property.selectType")}
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="SALE">
+                                  {t("property.listingTypes.sale")}
+                                </SelectItem>
+                                <SelectItem value="RENT">
+                                  {t("property.listingTypes.rent")}
+                                </SelectItem>
+                                <SelectItem value="BOTH">
+                                  {t("property.listingTypes.both")}
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        {errors.listingType && (
+                          <p className="text-sm text-red-500 mt-1">
+                            {errors.listingType.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {property && (
+                      <div>
                         <Label htmlFor="type" className="mb-2 block">
-                          Type *
+                          {t("property.type")} *
                         </Label>
                         <Controller
                           name="type"
@@ -371,17 +455,23 @@ export default function EditPropertyPage() {
                               value={field.value || property.type || undefined}
                             >
                               <SelectTrigger className="h-11">
-                                <SelectValue placeholder="Select type" />
+                                <SelectValue
+                                  placeholder={t("property.selectType")}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="APARTMENT">
-                                  Apartment
+                                  {t("property.types.apartment")}
                                 </SelectItem>
-                                <SelectItem value="HOUSE">House</SelectItem>
+                                <SelectItem value="HOUSE">
+                                  {t("property.types.house")}
+                                </SelectItem>
                                 <SelectItem value="COMMERCIAL">
-                                  Commercial
+                                  {t("property.types.commercial")}
                                 </SelectItem>
-                                <SelectItem value="LAND">Land</SelectItem>
+                                <SelectItem value="LAND">
+                                  {t("property.types.land")}
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           )}
@@ -405,60 +495,104 @@ export default function EditPropertyPage() {
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="price" className="mb-2 block">
-                        Price
-                      </Label>
-                      <div className="flex gap-2 items-center flex-wrap">
-                        <Input
-                          id="price"
-                          type="number"
-                          step="100"
-                          min="100"
-                          className="flex-1 min-w-[120px] h-11"
-                          {...register("price", { valueAsNumber: true })}
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="h-11 px-4"
-                          disabled={!canEstimate || isEstimating}
-                          onClick={handleEstimatePrice}
-                        >
-                          {isEstimating ? (
-                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                          ) : null}
-                          {isEstimating
-                            ? t("property.estimatingPrice")
-                            : t("property.estimatePrice")}
-                        </Button>
-                      </div>
-                      {watchedType &&
-                        watchedType !== "HOUSE" &&
-                        watchedType !== "APARTMENT" && (
-                          <p className="text-xs text-amber-600 mt-1">
-                            {t("property.estimationOnlyHouseApartment")}
-                          </p>
+                    <div className="space-y-4">
+                      {/* Price Section */}
+                      <div className="flex flex-col gap-4">
+                        {(watch("listingType") === "SALE" ||
+                          watch("listingType") === "BOTH") && (
+                          <div>
+                            <Label htmlFor="salePrice" className="mb-2 block">
+                              {t("property.salePrice")} *
+                            </Label>
+                            <Input
+                              id="salePrice"
+                              type="number"
+                              step="1000"
+                              min="100"
+                              className="h-11"
+                              {...register("salePrice", {
+                                valueAsNumber: true,
+                              })}
+                            />
+                            {errors.salePrice && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.salePrice.message}
+                              </p>
+                            )}
+                          </div>
                         )}
-                      {estimationBuyPrice != null && (
-                        <p className="text-xs text-primary/80 font-medium mt-1">
-                          {t("property.estimatedBuyPrice")}: $
-                          {estimationBuyPrice.toLocaleString()}
-                        </p>
-                      )}
-                      {estimationMonthlyRent != null && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {t("property.estimatedMonthlyRent")}: $
-                          {estimationMonthlyRent.toLocaleString()} /{" "}
-                          {t("property.perMonth")}
-                        </p>
-                      )}
-                      {errors.price && (
-                        <p className="text-sm text-red-500 mt-1">
-                          {errors.price.message}
-                        </p>
-                      )}
+
+                        {(watch("listingType") === "RENT" ||
+                          watch("listingType") === "BOTH") && (
+                          <div>
+                            <Label htmlFor="rentPrice" className="mb-2 block">
+                              {t("property.rentPrice")} *
+                            </Label>
+                            <div className="flex gap-2 items-center">
+                              <Input
+                                id="rentPrice"
+                                type="number"
+                                step="100"
+                                min="10"
+                                className="flex-1 h-11"
+                                {...register("rentPrice", {
+                                  valueAsNumber: true,
+                                })}
+                              />
+                              <span className="text-muted-foreground whitespace-nowrap">
+                                / {t("property.perMonth")}
+                              </span>
+                            </div>
+                            {errors.rentPrice && (
+                              <p className="text-sm text-red-500 mt-1">
+                                {errors.rentPrice.message}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* AI Estimate Button */}
+                        <div className="pt-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="w-full h-11"
+                            disabled={!canEstimate || isEstimating}
+                            onClick={handleEstimatePrice}
+                          >
+                            {isEstimating ? (
+                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                            ) : null}
+                            {isEstimating
+                              ? t("property.estimatingPrice")
+                              : t("property.estimatePrice")}
+                          </Button>
+                          {watchedType &&
+                            watchedType !== "HOUSE" &&
+                            watchedType !== "APARTMENT" && (
+                              <p className="text-xs text-amber-600 mt-1">
+                                {t("property.estimationOnlyHouseApartment")}
+                              </p>
+                            )}
+                          {estimationBuyPrice != null &&
+                            (watch("listingType") === "SALE" ||
+                              watch("listingType") === "BOTH") && (
+                              <p className="text-xs text-primary/80 font-medium mt-1">
+                                {t("property.estimatedBuyPrice")}: $
+                                {estimationBuyPrice.toLocaleString()}
+                              </p>
+                            )}
+                          {estimationMonthlyRent != null &&
+                            (watch("listingType") === "RENT" ||
+                              watch("listingType") === "BOTH") && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                {t("property.estimatedMonthlyRent")}: $
+                                {estimationMonthlyRent.toLocaleString()} /{" "}
+                                {t("property.perMonth")}
+                              </p>
+                            )}
+                        </div>
+                      </div>
                     </div>
 
                     {property && (
@@ -512,7 +646,7 @@ export default function EditPropertyPage() {
                       </div>
                       <div>
                         <Label htmlFor="rooms" className="mb-2 block">
-                          Rooms
+                          {t("property.rooms")}
                         </Label>
                         <Input
                           id="rooms"
@@ -529,7 +663,7 @@ export default function EditPropertyPage() {
                       </div>
                       <div>
                         <Label htmlFor="floor" className="mb-2 block">
-                          Floor
+                          {t("property.floor")}
                         </Label>
                         <Input
                           id="floor"
@@ -547,7 +681,7 @@ export default function EditPropertyPage() {
 
                     <div>
                       <Label htmlFor="description" className="mb-2 block">
-                        Description
+                        {t("property.description")}
                       </Label>
                       <Textarea
                         id="description"
@@ -570,7 +704,7 @@ export default function EditPropertyPage() {
 
                     <div className="space-y-3">
                       <Label className="text-base font-semibold mb-2 block">
-                        Property Location on Map
+                        {t("property.propertyLocationOnMap")}
                       </Label>
                       <div className="rounded-xl overflow-hidden border border-border shadow-sm">
                         <DynamicMapPicker
@@ -582,7 +716,7 @@ export default function EditPropertyPage() {
                         />
                       </div>
                       <p className="text-xs text-zinc-500 bg-zinc-50 p-2 rounded-lg border border-zinc-100 italic">
-                        Click on the map to set the property location
+                        {t("property.clickMapToSetLocation")}
                       </p>
                     </div>
                   </div>
@@ -598,10 +732,10 @@ export default function EditPropertyPage() {
                     {isSubmitting ? (
                       <div className="flex items-center gap-3">
                         <Loader2 className="w-5 h-5 animate-spin" />
-                        Updating...
+                        {t("property.updating")}
                       </div>
                     ) : (
-                      "Update Property"
+                      t("property.editProperty")
                     )}
                   </Button>
                   <Link href={`/properties/${id}`} className="flex-1">
@@ -611,7 +745,7 @@ export default function EditPropertyPage() {
                       size="lg"
                       className="w-full h-14 text-lg"
                     >
-                      Cancel
+                      {t("common.cancel")}
                     </Button>
                   </Link>
                 </div>

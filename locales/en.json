@@ -61,12 +61,13 @@
     "rooms": "Rooms",
     "floor": "Floor",
     "status": "Status",
+    "listingType": "Listing Type",
     "images": "Images",
     "createProperty": "Create Property",
     "editProperty": "Edit Property",
+    "updatePropertyDetails": "Update property details",
     "propertyDetails": "Property Details",
     "addNewProperty": "Add a new property to your portfolio",
-    "updatePropertyDetails": "Update property details",
     "noProperties": "No properties found.",
     "noImages": "No images uploaded yet.",
     "uploadImage": "Upload Image",
@@ -115,6 +116,13 @@
       "reserved": "Reserved",
       "closed": "Closed"
     },
+    "listingTypes": {
+      "sale": "Sale",
+      "rent": "Rent",
+      "both": "Sale & Rent"
+    },
+    "salePrice": "Sale Price",
+    "rentPrice": "Rent Price",
     "estimatePrice": "Estimate price (AI)",
     "estimatingPrice": "Estimating...",
     "estimationOnlyHouseApartment": "Price estimation is available for Apartment and House only.",
