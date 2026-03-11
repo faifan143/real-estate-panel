@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuthStore } from '@/store/auth';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from './ui/button';
 import { useRouter, usePathname } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +11,7 @@ import { useState, useEffect, useRef } from 'react';
 
 export function Navbar() {
   const { role, clearAuth, firstName, lastName, email } = useAuthStore();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation();
@@ -27,6 +29,7 @@ export function Navbar() {
   };
 
   const handleLogout = () => {
+    queryClient.clear();
     clearAuth();
     router.push('/login');
     setIsMenuOpen(false);

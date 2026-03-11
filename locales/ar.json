@@ -82,7 +82,7 @@
     "onlyActiveCanDelete": "يمكن حذف العقارات النشطة فقط",
     "propertyLocationOnMap": "موقع العقار على الخريطة",
     "clickMapToSetLocation": "انقر على الخريطة لتعيين موقع العقار",
-    "areaSqFt": "المساحة (قدم مربع)",
+    "areaSqFt": "المساحة (م²)",
     "coordinates": "الإحداثيات",
     "locationOnMap": "الموقع على الخريطة",
     "required": "مطلوب",

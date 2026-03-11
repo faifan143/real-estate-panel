@@ -39,7 +39,7 @@ export default function RequestDetailPage() {
   const { t, i18n } = useTranslation();
   const params = useParams();
   const id = params.id as string;
-  const { userId } = useAuthStore();
+  const { userId, role } = useAuthStore();
 
   const { data: request, isLoading } = useQuery({
     queryKey: ['request', id],
@@ -71,6 +71,12 @@ export default function RequestDetailPage() {
 
   // Find meeting for this property
   const meeting = meetings?.find((m: Meeting) => m.propertyId === request?.propertyId);
+
+  // Only the requester or admin may view this request (prevent other users from seeing it)
+  const canViewRequest =
+    request &&
+    userId &&
+    (String(request.requesterId) === String(userId) || role === 'ADMIN');
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'N/A';
@@ -119,7 +125,7 @@ export default function RequestDetailPage() {
       <div className="container mx-auto p-8">
         {isLoading ? (
           <p className="text-zinc-600">{t('request.loadingRequestDetails')}</p>
-        ) : request ? (
+        ) : canViewRequest ? (
           <div className="max-w-2xl mx-auto">
             <Card>
               <CardHeader>

@@ -82,7 +82,7 @@
     "onlyActiveCanDelete": "Only ACTIVE properties can be deleted",
     "propertyLocationOnMap": "Property Location on Map",
     "clickMapToSetLocation": "Click on the map to set the property location",
-    "areaSqFt": "Area (sq ft)",
+    "areaSqFt": "Area (m²)",
     "coordinates": "Coordinates",
     "locationOnMap": "Location on Map",
     "required": "Required",

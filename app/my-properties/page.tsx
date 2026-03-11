@@ -415,7 +415,7 @@ export default function MyPropertiesPage() {
                             {property.area && (
                               <div className="flex items-center gap-1">
                                 <Maximize className="w-4 h-4" />
-                                <span className="font-medium">{property.area} قدم²</span>
+                                <span className="font-medium">{property.area} m²</span>
                               </div>
                             )}
                           </div>
