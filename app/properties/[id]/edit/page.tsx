@@ -115,6 +115,7 @@ export default function EditPropertyPage() {
   const [mapKey, setMapKey] = useState(0);
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
 
   const { data: property, isLoading } = useQuery({
     queryKey: ["property", id],
@@ -128,6 +129,9 @@ export default function EditPropertyPage() {
   const [estimationMonthlyRent, setEstimationMonthlyRent] = useState<
     number | null
   >(null);
+  const [estimationBuyPrice, setEstimationBuyPrice] = useState<number | null>(
+    null,
+  );
 
   const {
     register,
@@ -244,7 +248,10 @@ export default function EditPropertyPage() {
         ...(description ? { description } : {}),
         ...(id ? { propertyId: parseInt(id, 10) } : {}),
       });
-      setValue("price", result.estimatedPrice, { shouldValidate: true });
+      setEstimationBuyPrice(result.estimatedBuyPrice ?? result.estimatedPrice);
+      setValue("price", result.estimatedBuyPrice ?? result.estimatedPrice, {
+        shouldValidate: true,
+      });
       setEstimationMonthlyRent(result.estimatedMonthlyRent ?? null);
       toast.success(t("property.estimatedPriceNote"));
     } catch (err: any) {
@@ -261,7 +268,26 @@ export default function EditPropertyPage() {
 
   const onSubmit = async (data: PropertyFormData) => {
     try {
-      await api.patch(`/properties/${id}`, data);
+      const formData = new FormData();
+
+      // Add Property Details
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
+        }
+      });
+
+      // Add Multiple Images (New ones)
+      selectedFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      await api.patch(`/properties/${id}`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
       queryClient.invalidateQueries({ queryKey: ["property", id] });
       queryClient.invalidateQueries({ queryKey: ["properties"] });
       toast.success("Property updated successfully!");
@@ -415,6 +441,12 @@ export default function EditPropertyPage() {
                             {t("property.estimationOnlyHouseApartment")}
                           </p>
                         )}
+                      {estimationBuyPrice != null && (
+                        <p className="text-xs text-primary/80 font-medium mt-1">
+                          {t("property.estimatedBuyPrice")}: $
+                          {estimationBuyPrice.toLocaleString()}
+                        </p>
+                      )}
                       {estimationMonthlyRent != null && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {t("property.estimatedMonthlyRent")}: $
@@ -532,6 +564,7 @@ export default function EditPropertyPage() {
                       <PropertyImageUpload
                         propertyId={id}
                         initialImages={property?.images || []}
+                        onChange={setSelectedFiles}
                       />
                     </div>
 

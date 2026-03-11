@@ -76,6 +76,7 @@
     "viewDetails": "عرض التفاصيل",
     "deleteProperty": "حذف العقار",
     "deleteConfirm": "هل أنت متأكد من حذف هذا العقار؟",
+    "deleteImageConfirm": "هل أنت متأكد من حذف هذه الصورة؟",
     "propertyCreated": "تم إنشاء العقار بنجاح!",
     "propertyUpdated": "تم تحديث العقار بنجاح!",
     "propertyDeleted": "تم حذف العقار بنجاح!",

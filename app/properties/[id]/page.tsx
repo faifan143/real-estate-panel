@@ -23,6 +23,7 @@ import dynamic from "next/dynamic";
 import { useTranslation } from "react-i18next";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
 import { PropertyImageUpload } from "@/components/property/property-image-upload";
+import { ImagePreviewer } from "@/components/ui/image-previewer";
 
 // Dynamically import MapViewer to avoid SSR issues
 const DynamicMapViewer = dynamic(
@@ -75,6 +76,10 @@ export default function PropertyDetailPage() {
   const [estimateResult, setEstimateResult] = useState<{
     buyPrice: number;
     monthlyRent?: number;
+  } | null>(null);
+  const [previewImage, setPreviewImage] = useState<{
+    url: string;
+    alt: string;
   } | null>(null);
 
   const { data: property, isLoading } = useQuery({
@@ -211,6 +216,12 @@ export default function PropertyDetailPage() {
                       src={property.images[0].url}
                       alt={property.title}
                       className="w-full h-full object-cover hover:brightness-95 transition-all cursor-pointer"
+                      onClick={() =>
+                        setPreviewImage({
+                          url: property.images[0].url,
+                          alt: property.title,
+                        })
+                      }
                     />
                   </div>
                   {property.images.slice(1, 5).map((image, idx) => (
@@ -224,6 +235,12 @@ export default function PropertyDetailPage() {
                         src={image.url}
                         alt={`${property.title} ${idx + 2}`}
                         className="w-full h-full object-cover hover:brightness-95 transition-all cursor-pointer"
+                        onClick={() =>
+                          setPreviewImage({
+                            url: image.url,
+                            alt: `${property.title} ${idx + 2}`,
+                          })
+                        }
                       />
                     </div>
                   ))}
@@ -493,6 +510,12 @@ export default function PropertyDetailPage() {
       </div>
 
       {/* Delete Image Confirmation Dialog is now handled by PropertyImageUpload component */}
+      <ImagePreviewer
+        isOpen={!!previewImage}
+        url={previewImage?.url || null}
+        alt={previewImage?.alt}
+        onClose={() => setPreviewImage(null)}
+      />
     </ProtectedRoute>
   );
 }

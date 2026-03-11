@@ -9,6 +9,7 @@ import { api } from "@/lib/axios";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { ConfirmationDialog } from "@/components/ui/confirmation-dialog";
+import { ImagePreviewer } from "@/components/ui/image-previewer";
 
 interface PropertyImage {
   imageId: string;
@@ -41,6 +42,10 @@ export function PropertyImageUpload({
     imageId: string | null;
     fileName: string;
   }>({ open: false, imageId: null, fileName: "" });
+  const [previewImage, setPreviewImage] = useState<{
+    url: string;
+    alt: string;
+  } | null>(null);
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -85,11 +90,11 @@ export function PropertyImageUpload({
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
 
-      if (propertyId) {
-        // Direct upload in edit/details mode
+      if (propertyId && !onChange) {
+        // Direct upload in edit/details mode ONLY if no onChange is provided
         newFiles.forEach((file) => uploadMutation.mutate(file));
       } else {
-        // Collect files in create mode
+        // Collect files in create mode OR deferred update mode
         const updatedFiles = [...selectedFiles, ...newFiles];
         setSelectedFiles(updatedFiles);
         if (onChange) onChange(updatedFiles);
@@ -153,17 +158,23 @@ export function PropertyImageUpload({
             <img
               src={image.url}
               alt={image.fileName}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover cursor-pointer hover:brightness-110 transition-all"
+              onClick={() =>
+                setPreviewImage({ url: image.url, alt: image.fileName })
+              }
             />
-            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button
                 type="button"
                 size="icon"
                 variant="destructive"
-                className="w-8 h-8"
-                onClick={() => handleDeleteClick(image)}
+                className="w-7 h-7 rounded-full shadow-lg"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteClick(image);
+                }}
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </Button>
             </div>
           </div>
@@ -178,20 +189,29 @@ export function PropertyImageUpload({
             <img
               src={URL.createObjectURL(file)}
               alt={file.name}
-              className="w-full h-full object-cover opacity-70"
+              className="w-full h-full object-cover opacity-70 cursor-pointer hover:opacity-90 transition-all"
+              onClick={() =>
+                setPreviewImage({
+                  url: URL.createObjectURL(file),
+                  alt: file.name,
+                })
+              }
             />
-            <div className="absolute inset-0 flex items-center justify-center">
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <span className="bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full">
                 {t("common.pending") || "Pending"}
               </span>
             </div>
-            <div className="absolute inset-x-0 bottom-0 p-1 bg-black/40 text-white text-[8px] truncate">
+            <div className="absolute inset-x-0 bottom-0 p-1 bg-black/40 text-white text-[8px] truncate pointer-events-none">
               {file.name}
             </div>
             <button
               type="button"
-              className="absolute top-1 right-1 bg-destructive text-white rounded-full p-0.5 hover:bg-destructive/80 transition-colors"
-              onClick={() => removeLocalFile(index)}
+              className="absolute top-1 right-1 bg-destructive text-white rounded-full p-0.5 hover:bg-destructive/80 transition-colors shadow-lg z-10"
+              onClick={(e) => {
+                e.stopPropagation();
+                removeLocalFile(index);
+              }}
             >
               <X className="w-3 h-3" />
             </button>
@@ -221,12 +241,19 @@ export function PropertyImageUpload({
         open={deleteDialog.open}
         onOpenChange={(open) => setDeleteDialog({ ...deleteDialog, open })}
         title={t("common.delete") || "Delete"}
-        description={t("property.deleteConfirm") || "Are you sure?"}
+        description={t("property.deleteImageConfirm") || "Are you sure?"}
         confirmText={t("common.delete")}
         cancelText={t("common.cancel")}
         onConfirm={confirmDelete}
         variant="destructive"
         loading={deleteMutation.isPending}
+      />
+
+      <ImagePreviewer
+        isOpen={!!previewImage}
+        url={previewImage?.url || null}
+        alt={previewImage?.alt}
+        onClose={() => setPreviewImage(null)}
       />
     </div>
   );

@@ -76,6 +76,7 @@
     "viewDetails": "View Details",
     "deleteProperty": "Delete Property",
     "deleteConfirm": "Are you sure you want to delete this property?",
+    "deleteImageConfirm": "Are you sure you want to delete this image?",
     "propertyCreated": "Property created successfully!",
     "propertyUpdated": "Property updated successfully!",
     "propertyDeleted": "Property deleted successfully!",

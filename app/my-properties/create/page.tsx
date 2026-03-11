@@ -103,6 +103,9 @@ export default function CreatePropertyPage() {
   const [estimationMonthlyRent, setEstimationMonthlyRent] = useState<
     number | null
   >(null);
+  const [estimationBuyPrice, setEstimationBuyPrice] = useState<number | null>(
+    null,
+  );
 
   const watchedType = watch("type");
   const watchedAddress = watch("address");
@@ -150,6 +153,7 @@ export default function CreatePropertyPage() {
         ...(description ? { description } : {}),
       });
       setValue("price", result.estimatedPrice, { shouldValidate: true });
+      setEstimationBuyPrice(result.estimatedPrice);
       setEstimationMonthlyRent(result.estimatedMonthlyRent ?? null);
       toast.success(t("property.estimatedPriceNote"));
     } catch (err: any) {
@@ -170,36 +174,36 @@ export default function CreatePropertyPage() {
 
   const onSubmit = async (data: PropertyFormData) => {
     try {
-      const response = await api.post("/properties", data);
-      const propertyId = response.data.propertyId;
+      setIsUploading(true);
+      const formData = new FormData();
 
-      // Upload images if any
-      if (selectedFiles.length > 0) {
-        setIsUploading(true);
-        try {
-          for (const file of selectedFiles) {
-            const formData = new FormData();
-            formData.append("image", file);
-            await api.post(`/properties/${propertyId}/images`, formData, {
-              headers: { "Content-Type": "multipart/form-data" },
-            });
-          }
-        } catch (uploadError) {
-          console.error("Image upload failed:", uploadError);
-          toast.error(
-            t("property.uploadFailed") || "Some images failed to upload",
-          );
-        } finally {
-          setIsUploading(false);
+      // Add Property Details
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          formData.append(key, value.toString());
         }
-      }
+      });
 
+      // Add Multiple Images
+      selectedFiles.forEach((file) => {
+        formData.append("images", file);
+      });
+
+      const response = await api.post("/properties", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      const propertyId = response.data.propertyId;
       toast.success(t("property.propertyCreated"));
       router.push(`/properties/${propertyId}`);
     } catch (error: any) {
       const message =
         error.response?.data?.message || t("property.creationFailed");
       toast.error(message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -322,6 +326,12 @@ export default function CreatePropertyPage() {
                             {t("property.estimationOnlyHouseApartment")}
                           </p>
                         )}
+                      {estimationBuyPrice != null && (
+                        <p className="text-xs text-primary/80 font-medium mt-1">
+                          {t("property.estimatedBuyPrice")}: $
+                          {estimationBuyPrice.toLocaleString()}
+                        </p>
+                      )}
                       {estimationMonthlyRent != null && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {t("property.estimatedMonthlyRent")}: $
