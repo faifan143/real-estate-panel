@@ -50,15 +50,27 @@ const DynamicMapPicker = dynamic(
   },
 );
 
+const handleEmptyNumber = (value: any, originalValue: any) => {
+  if (
+    originalValue === "" ||
+    originalValue === null ||
+    originalValue === undefined
+  ) {
+    return null;
+  }
+  return Number.isNaN(value) ? null : value;
+};
+
 const propertySchema = yup.object({
   title: yup.string().required("Title is required"),
   type: yup.string().required("Type is required"),
   address: yup.string().optional(),
   description: yup.string().optional(),
-  price: yup.number().optional().nullable(),
+  price: yup.number().transform(handleEmptyNumber).optional().nullable(),
   listingType: yup.string().required("Listing type is required"),
   salePrice: yup
     .number()
+    .transform(handleEmptyNumber)
     .min(100, "Sale price must be at least 100")
     .when("listingType", {
       is: (val: string) => val === "SALE" || val === "BOTH",
@@ -67,27 +79,35 @@ const propertySchema = yup.object({
     }),
   rentPrice: yup
     .number()
+    .transform(handleEmptyNumber)
     .min(10, "Rent price must be at least 10")
     .when("listingType", {
       is: (val: string) => val === "RENT" || val === "BOTH",
       then: (schema) => schema.required("Rent price is required"),
       otherwise: (schema) => schema.optional().nullable(),
     }),
-  latitude: yup.number().optional().nullable(),
-  longitude: yup.number().optional().nullable(),
+  latitude: yup.number().transform(handleEmptyNumber).optional().nullable(),
+  longitude: yup.number().transform(handleEmptyNumber).optional().nullable(),
   area: yup
     .number()
+    .transform(handleEmptyNumber)
     .min(0, "Area must be positive")
     .integer("Area must be an integer")
     .optional()
     .nullable(),
   rooms: yup
     .number()
+    .transform(handleEmptyNumber)
     .min(0, "Rooms must be positive")
     .integer("Rooms must be an integer")
     .optional()
     .nullable(),
-  floor: yup.number().integer("Floor must be an integer").optional().nullable(),
+  floor: yup
+    .number()
+    .transform(handleEmptyNumber)
+    .integer("Floor must be an integer")
+    .optional()
+    .nullable(),
 });
 
 type PropertyFormData = yup.InferType<typeof propertySchema>;
@@ -110,6 +130,20 @@ export default function CreatePropertyPage() {
     formState: { errors, isSubmitting },
   } = useForm<PropertyFormData>({
     resolver: yupResolver(propertySchema) as any,
+    defaultValues: {
+      title: "",
+      type: "",
+      address: "",
+      description: "",
+      listingType: "",
+      salePrice: undefined,
+      rentPrice: undefined,
+      latitude: null,
+      longitude: null,
+      area: undefined,
+      rooms: undefined,
+      floor: undefined,
+    },
   });
 
   const [isEstimating, setIsEstimating] = useState(false);
@@ -234,6 +268,14 @@ export default function CreatePropertyPage() {
     }
   };
 
+  const onError = (errors: any) => {
+    console.error("Form validation errors:", errors);
+    toast.error(
+      t("property.fillRequiredFields") ||
+        "Please fill in all required fields correctly.",
+    );
+  };
+
   return (
     <ProtectedRoute requireRole="USER">
       <Navbar />
@@ -245,7 +287,10 @@ export default function CreatePropertyPage() {
               <CardDescription>{t("property.addNewProperty")}</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              <form
+                onSubmit={handleSubmit(onSubmit, onError)}
+                className="space-y-6"
+              >
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Left Column: Basic Information */}
                   <div className="space-y-4">
@@ -410,48 +455,6 @@ export default function CreatePropertyPage() {
                             )}
                           </div>
                         )}
-
-                        {/* AI Estimate Button */}
-                        <div className="pt-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            className="w-full h-11"
-                            disabled={!canEstimate || isEstimating}
-                            onClick={handleEstimatePrice}
-                          >
-                            {isEstimating ? (
-                              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                            ) : null}
-                            {isEstimating
-                              ? t("property.estimatingPrice")
-                              : t("property.estimatePrice")}
-                          </Button>
-                          {watchedType &&
-                            watchedType !== "HOUSE" &&
-                            watchedType !== "APARTMENT" && (
-                              <p className="text-xs text-amber-600 mt-1">
-                                {t("property.estimationOnlyHouseApartment")}
-                              </p>
-                            )}
-                          {estimationBuyPrice != null &&
-                            (watch("listingType") === "SALE" ||
-                              watch("listingType") === "BOTH") && (
-                              <p className="text-xs text-primary/80 font-medium mt-1">
-                                {t("property.estimatedBuyPrice")}: $
-                                {estimationBuyPrice.toLocaleString()}
-                              </p>
-                            )}
-                          {estimationMonthlyRent != null &&
-                            (watch("listingType") === "RENT" ||
-                              watch("listingType") === "BOTH") && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                {t("property.estimatedMonthlyRent")}: $
-                                {estimationMonthlyRent.toLocaleString()} /{" "}
-                                {t("property.perMonth")}
-                              </p>
-                            )}
-                        </div>
                       </div>
                     </div>
 
@@ -505,6 +508,50 @@ export default function CreatePropertyPage() {
                             {errors.floor.message}
                           </p>
                         )}
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* AI Estimate Button */}
+                      <div className="pt-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full h-11"
+                          disabled={!canEstimate || isEstimating}
+                          onClick={handleEstimatePrice}
+                        >
+                          {isEstimating ? (
+                            <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                          ) : null}
+                          {isEstimating
+                            ? t("property.estimatingPrice")
+                            : t("property.estimatePrice")}
+                        </Button>
+                        {watchedType &&
+                          watchedType !== "HOUSE" &&
+                          watchedType !== "APARTMENT" && (
+                            <p className="text-xs text-amber-600 mt-1">
+                              {t("property.estimationOnlyHouseApartment")}
+                            </p>
+                          )}
+                        {estimationBuyPrice != null &&
+                          (watch("listingType") === "SALE" ||
+                            watch("listingType") === "BOTH") && (
+                            <p className="text-xs text-primary/80 font-medium mt-1">
+                              {t("property.estimatedBuyPrice")}: $
+                              {estimationBuyPrice.toLocaleString()}
+                            </p>
+                          )}
+                        {estimationMonthlyRent != null &&
+                          (watch("listingType") === "RENT" ||
+                            watch("listingType") === "BOTH") && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {t("property.estimatedMonthlyRent")}: $
+                              {estimationMonthlyRent.toLocaleString()} /{" "}
+                              {t("property.perMonth")}
+                            </p>
+                          )}
                       </div>
                     </div>
 
