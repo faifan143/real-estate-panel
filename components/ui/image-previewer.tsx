@@ -1,8 +1,13 @@
 "use client";
 
-import { Dialog, DialogContent, DialogOverlay } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogOverlay,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { X } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 interface ImagePreviewerProps {
   url: string | null;
@@ -25,6 +30,12 @@ export function ImagePreviewer({
         className="max-w-7xl w-[95vw] h-[90vh] p-0 bg-transparent border-none shadow-none flex items-center justify-center overflow-hidden"
         showCloseButton={false}
       >
+        <div className="sr-only">
+          <DialogTitle>{alt}</DialogTitle>
+          <DialogDescription>
+            Full size image preview of {alt}
+          </DialogDescription>
+        </div>
         <button
           onClick={onClose}
           className="absolute top-4 right-4 z-50 p-2 rounded-full bg-black/50 text-white hover:bg-black/70 transition-colors"
